@@ -1,0 +1,89 @@
+{
+  "idea": {
+    "name": "Decision Graph",
+    "description": "AI-native decision infrastructure for structured, updateable decision-making over time."
+  },
+  "wedge": {
+    "slug": "manager-people",
+    "name": "Manager and people decisions",
+    "description": "High-stakes, recurring team decisions such as performance concerns, promotions, hiring, firing, and team restructuring."
+  },
+  "idea_source": "decision-graph.md",
+  "notes_sources": [],
+  "evidence_policy": {
+    "mode": "desk_research_plus_your_notes",
+    "founder_notes_can_validate_claims": false
+  },
+  "required_artifacts": [
+    "researcher",
+    "skeptic",
+    "rebuttal",
+    "judge"
+  ],
+  "engine_roles": {
+    "researcher": "claude",
+    "skeptic": "codex",
+    "rebuttal": "claude",
+    "judge": "codex"
+  },
+  "core_claims": [
+    {
+      "id": "pain_is_frequent",
+      "priority": 1,
+      "must_prove": true,
+      "statement": "Manager and people decisions are painful and frequent enough that users will return to a dedicated tool."
+    },
+    {
+      "id": "continuity_beats_chat",
+      "priority": 2,
+      "must_prove": true,
+      "statement": "Decision continuity and revisability create materially more value than one-off chat advice for this wedge."
+    },
+    {
+      "id": "behavior_change_is_plausible",
+      "priority": 3,
+      "must_prove": true,
+      "statement": "Managers will accept the workflow change if the tool reduces stress and improves defensibility in the first session."
+    },
+    {
+      "id": "pilot_can_be_narrow",
+      "priority": 4,
+      "must_prove": true,
+      "statement": "A focused pilot can start with a narrow subset of manager/people decisions without requiring a full decision operating system."
+    },
+    {
+      "id": "investor_story_has_substance",
+      "priority": 5,
+      "must_prove": false,
+      "statement": "There is a believable market and category story beyond a thin AI wrapper."
+    }
+  ],
+  "kill_criteria": [
+    {
+      "id": "users_will_not_switch",
+      "priority": 1,
+      "statement": "Target users are unlikely to change behavior from existing tools like ChatGPT, docs, or spreadsheets."
+    },
+    {
+      "id": "continuity_is_novelty_only",
+      "priority": 2,
+      "statement": "Decision memory and graph structure do not provide enough incremental value over ordinary chat history."
+    },
+    {
+      "id": "trust_bar_is_too_high",
+      "priority": 3,
+      "statement": "Users will not trust the system with sensitive people decisions at the level required for adoption."
+    },
+    {
+      "id": "market_story_is_weak",
+      "priority": 4,
+      "statement": "The idea lacks a defensible wedge, comparable successes, or a believable path to durable value."
+    }
+  ],
+  "verdict_rules": {
+    "rejection_confidence_threshold": 0.7,
+    "plausible_confidence_threshold": 0.7,
+    "stalled_after_consecutive_no_evidence_cycles": 3,
+    "plausible_requires_pilot_fields": true
+  }
+}

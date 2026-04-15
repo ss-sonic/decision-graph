@@ -9,6 +9,9 @@ Rules:
 - Do not restate unsupported claims as facts.
 - Return JSON only matching the required schema.
 
+Required output schema:
+$artifact_contract
+
 Objective:
 $objective
 
@@ -17,4 +20,3 @@ $campaign_yaml
 
 Context:
 $context_sections
-

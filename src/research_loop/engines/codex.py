@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
-from .base import EngineAdapter, EngineError, PreflightResult
+from .base import EngineAdapter, EngineError, PreflightResult, engine_timeout_seconds
 
 
 class CodexAdapter(EngineAdapter):
@@ -53,16 +54,45 @@ class CodexAdapter(EngineAdapter):
         ]
         if search_required:
             command.insert(2, "--search")
-        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        stderr_path = output_dir / "stderr.txt"
+        heartbeat_seconds = int(os.getenv("RESEARCH_LOOP_HEARTBEAT_SECS", "5"))
+        timeout_seconds = engine_timeout_seconds()
+        start = time.monotonic()
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout = ""
+        stderr = ""
+        while True:
+            try:
+                stdout, stderr = process.communicate(timeout=heartbeat_seconds)
+                break
+            except subprocess.TimeoutExpired:
+                elapsed = int(time.monotonic() - start)
+                print(f"[{self.engine_name}:{role}] still running... {elapsed}s elapsed", flush=True)
+                if timeout_seconds is not None and elapsed >= timeout_seconds:
+                    process.kill()
+                    stdout, stderr = process.communicate()
+                    stderr_path.write_text(stderr, encoding="utf-8")
+                    try:
+                        schema_path.unlink(missing_ok=True)
+                    except OSError:
+                        pass
+                    raise EngineError(
+                        f"{self.engine_name} invocation timed out after {timeout_seconds}s for step `{role}`"
+                    )
+        stderr_path.write_text(stderr, encoding="utf-8")
         try:
             schema_path.unlink(missing_ok=True)
         except OSError:
             pass
-        if result.returncode != 0:
+        if process.returncode != 0:
             raise EngineError(
-                f"codex invocation failed with code {result.returncode}:\n{result.stderr.strip()}"
+                f"codex invocation failed with code {process.returncode}:\n{stderr.strip()}"
             )
         if not output_path.exists():
             raise EngineError("codex finished without writing the final message output file")
         return output_path
-

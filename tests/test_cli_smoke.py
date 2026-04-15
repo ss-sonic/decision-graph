@@ -23,7 +23,15 @@ def base_artifact(summary: str, **extra: object) -> dict[str, object]:
     payload: dict[str, object] = {
         "objective": "test objective",
         "summary": summary,
-        "findings": [{"title": summary, "detail": summary}],
+        "findings": [
+            {
+                "title": summary,
+                "detail": summary,
+                "claim_id": None,
+                "kill_criterion_id": None,
+                "strength": None,
+            }
+        ],
         "sources": [{"title": "source", "locator": "https://example.com", "source_type": "web"}],
         "supports_claims": [],
         "weakens_claims": [],
@@ -32,6 +40,17 @@ def base_artifact(summary: str, **extra: object) -> dict[str, object]:
         "open_questions": [],
         "next_recommended_objective": None,
         "confidence": 0.6,
+        "proposed_mutations": [],
+        "recommended_verdict": "active",
+        "claim_statuses": {},
+        "kill_criterion_source_counts": {},
+        "resolved_contradictions": [],
+        "pilot_recommendation": {
+            "target_user": None,
+            "pain_statement": None,
+            "current_workaround": None,
+            "why_existing_tools_fail": None,
+        },
     }
     payload.update(extra)
     return payload
@@ -42,7 +61,9 @@ class CliSmokeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             copy_file(ROOT / "decision-graph.md", root / "decision-graph.md")
+            copy_file(ROOT / "campaigns" / "client-discovery.yaml", root / "campaigns" / "client-discovery.yaml")
             copy_file(ROOT / "campaigns" / "manager-people.yaml", root / "campaigns" / "manager-people.yaml")
+            copy_file(ROOT / "campaigns" / "pip-continuity.yaml", root / "campaigns" / "pip-continuity.yaml")
             for prompt_name in ["researcher.md", "skeptic.md", "rebuttal.md", "judge.md"]:
                 copy_file(ROOT / "prompts" / prompt_name, root / "prompts" / prompt_name)
             copy_file(ROOT / "pyproject.toml", root / "pyproject.toml")
@@ -51,11 +72,17 @@ class CliSmokeTests(unittest.TestCase):
                 "claude": {
                     "researcher": base_artifact(
                         "Research step",
-                        supports_claims=["pain_is_frequent", "continuity_beats_chat"],
+                        supports_claims=["right_client_segment_exists", "decision_fatigue_maps_to_workflow"],
                     ),
                     "rebuttal": base_artifact(
                         "Rebuttal step",
-                        supports_claims=["pain_is_frequent", "continuity_beats_chat", "behavior_change_is_plausible", "pilot_can_be_narrow"],
+                        supports_claims=[
+                            "right_client_segment_exists",
+                            "decision_fatigue_maps_to_workflow",
+                            "product_shape_can_be_tuned",
+                            "switching_pressure_exists",
+                            "pilot_path_is_accessible",
+                        ],
                     ),
                 },
                 "codex": {
@@ -67,10 +94,11 @@ class CliSmokeTests(unittest.TestCase):
                     "judge": base_artifact(
                         "Judge step",
                         supports_claims=[
-                            "pain_is_frequent",
-                            "continuity_beats_chat",
-                            "behavior_change_is_plausible",
-                            "pilot_can_be_narrow",
+                            "right_client_segment_exists",
+                            "decision_fatigue_maps_to_workflow",
+                            "product_shape_can_be_tuned",
+                            "switching_pressure_exists",
+                            "pilot_path_is_accessible",
                         ],
                         contradictions=[],
                         resolved_contradictions=["comp-density"],
@@ -82,6 +110,15 @@ class CliSmokeTests(unittest.TestCase):
                             "current_workaround": "ChatGPT plus docs plus ad hoc notes.",
                             "why_existing_tools_fail": "They do not preserve structured reasoning over time.",
                         },
+                        proposed_mutations=[
+                            {
+                                "target_type": "report",
+                                "target_file": "pilot.md",
+                                "operation": "replace_file",
+                                "content": "# Custom Pilot\n\nMerged from approved mutation.\n",
+                                "reason": "Provide a cleaner pilot memo than the default template.",
+                            }
+                        ],
                     ),
                 },
             }
@@ -116,7 +153,11 @@ class CliSmokeTests(unittest.TestCase):
                 text=True,
             )
             self.assertIn("current-brief.md", report.stdout)
-            self.assertTrue((root / "reports" / "manager-people" / "pilot.md").exists())
+            self.assertTrue((root / "reports" / "client-discovery" / "pilot.md").exists())
+            pilot_text = (root / "reports" / "client-discovery" / "pilot.md").read_text(encoding="utf-8")
+            self.assertIn("Custom Pilot", pilot_text)
+            mutation_log = json.loads((root / "runs" / "client-discovery" / "cycle-0001" / "mutation-log.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(mutation_log["merged"]), 1)
 
 
 if __name__ == "__main__":

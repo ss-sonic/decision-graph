@@ -20,7 +20,7 @@ ROLE_TO_TEMPLATE = {
 def artifact_schema() -> dict[str, Any]:
     return {
         "type": "object",
-        "additionalProperties": True,
+        "additionalProperties": False,
         "required": [
             "objective",
             "summary",
@@ -33,6 +33,12 @@ def artifact_schema() -> dict[str, Any]:
             "open_questions",
             "next_recommended_objective",
             "confidence",
+            "proposed_mutations",
+            "recommended_verdict",
+            "claim_statuses",
+            "kill_criterion_source_counts",
+            "resolved_contradictions",
+            "pilot_recommendation",
         ],
         "properties": {
             "objective": {"type": "string"},
@@ -41,13 +47,14 @@ def artifact_schema() -> dict[str, Any]:
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "required": ["title", "detail"],
+                    "additionalProperties": False,
+                    "required": ["title", "detail", "claim_id", "kill_criterion_id", "strength"],
                     "properties": {
                         "title": {"type": "string"},
                         "detail": {"type": "string"},
-                        "claim_id": {"type": "string"},
-                        "kill_criterion_id": {"type": "string"},
-                        "strength": {"type": "string"},
+                        "claim_id": {"type": ["string", "null"]},
+                        "kill_criterion_id": {"type": ["string", "null"]},
+                        "strength": {"type": ["string", "null"]},
                     },
                 },
             },
@@ -55,6 +62,7 @@ def artifact_schema() -> dict[str, Any]:
                 "type": "array",
                 "items": {
                     "type": "object",
+                    "additionalProperties": False,
                     "required": ["title", "locator", "source_type"],
                     "properties": {
                         "title": {"type": "string"},
@@ -69,42 +77,76 @@ def artifact_schema() -> dict[str, Any]:
             "contradictions": {
                 "type": "array",
                 "items": {
-                    "oneOf": [
-                        {"type": "string"},
-                        {
-                            "type": "object",
-                            "required": ["id", "detail"],
-                            "properties": {
-                                "id": {"type": "string"},
-                                "detail": {"type": "string"},
-                            },
-                        },
-                    ]
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["id", "detail"],
+                    "properties": {
+                        "id": {"type": "string"},
+                        "detail": {"type": "string"},
+                    },
                 },
             },
             "open_questions": {"type": "array", "items": {"type": "string"}},
             "next_recommended_objective": {"type": ["string", "null"]},
             "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+            "proposed_mutations": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["target_type", "target_file", "operation", "content", "reason"],
+                    "properties": {
+                        "target_type": {"type": "string", "enum": ["report"]},
+                        "target_file": {"type": "string"},
+                        "operation": {"type": "string", "enum": ["replace_file"]},
+                        "content": {"type": "string"},
+                        "reason": {"type": ["string", "null"]},
+                    },
+                },
+            },
             "recommended_verdict": {
                 "type": "string",
                 "enum": ["active", "promising", "plausible", "rejected", "stalled"],
             },
             "claim_statuses": {
-                "type": "object",
-                "additionalProperties": {"type": "string"},
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["claim_id", "status"],
+                    "properties": {
+                        "claim_id": {"type": "string"},
+                        "status": {"type": "string"},
+                    },
+                },
             },
             "kill_criterion_source_counts": {
-                "type": "object",
-                "additionalProperties": {"type": "integer"},
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["kill_criterion_id", "source_count"],
+                    "properties": {
+                        "kill_criterion_id": {"type": "string"},
+                        "source_count": {"type": "integer"},
+                    },
+                },
             },
             "resolved_contradictions": {"type": "array", "items": {"type": "string"}},
             "pilot_recommendation": {
                 "type": "object",
+                "additionalProperties": False,
+                "required": [
+                    "target_user",
+                    "pain_statement",
+                    "current_workaround",
+                    "why_existing_tools_fail",
+                ],
                 "properties": {
-                    "target_user": {"type": "string"},
-                    "pain_statement": {"type": "string"},
-                    "current_workaround": {"type": "string"},
-                    "why_existing_tools_fail": {"type": "string"},
+                    "target_user": {"type": ["string", "null"]},
+                    "pain_statement": {"type": ["string", "null"]},
+                    "current_workaround": {"type": ["string", "null"]},
+                    "why_existing_tools_fail": {"type": ["string", "null"]},
                 },
             },
         },
@@ -129,4 +171,3 @@ def render_prompt(
         context_sections=rendered_context or "No extra context provided.",
         artifact_contract=json.dumps(artifact_schema(), indent=2),
     )
-

@@ -46,6 +46,8 @@ def initialize_state(campaign: Campaign) -> dict[str, Any]:
         "kill_criteria_status": kill_status,
         "unresolved_contradictions": [],
         "latest_artifacts": {},
+        "merged_mutations": {},
+        "mutation_history": [],
         "history": [],
     }
 
@@ -53,7 +55,10 @@ def initialize_state(campaign: Campaign) -> dict[str, Any]:
 def load_or_initialize_state(root: Path, campaign: Campaign) -> dict[str, Any]:
     path = state_path(root, campaign)
     if path.exists():
-        return read_json(path)
+        state = read_json(path)
+        state.setdefault("merged_mutations", {})
+        state.setdefault("mutation_history", [])
+        return state
     state = initialize_state(campaign)
     save_state(root, campaign, state)
     return state
@@ -64,7 +69,17 @@ def save_state(root: Path, campaign: Campaign, state: dict[str, Any]) -> None:
 
 
 def next_cycle_dir(root: Path, campaign: Campaign, state: dict[str, Any]) -> Path:
-    cycle_number = int(state["cycle_count"]) + 1
+    preferred = int(state["cycle_count"]) + 1
+    existing_numbers = []
+    for path in campaign_run_dir(root, campaign).glob("cycle-*"):
+        if not path.is_dir():
+            continue
+        try:
+            existing_numbers.append(int(path.name.split("-")[-1]))
+        except ValueError:
+            continue
+    highest_existing = max(existing_numbers, default=0)
+    cycle_number = max(preferred, highest_existing + 1)
     return ensure_directory(campaign_run_dir(root, campaign) / f"cycle-{cycle_number:04d}")
 
 
@@ -72,4 +87,3 @@ def append_history(state: dict[str, Any], entry: dict[str, Any]) -> dict[str, An
     updated = deepcopy(state)
     updated["history"] = [*updated.get("history", []), entry]
     return updated
-

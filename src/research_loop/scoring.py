@@ -6,7 +6,64 @@ from typing import Any
 from .campaign import Campaign
 
 
+def _claim_status_map(raw_value: Any) -> dict[str, str]:
+    status_aliases = {
+        "untested": "untested",
+        "supported": "supported",
+        "contested": "contested",
+        "rejected": "rejected",
+        "unsupported": "rejected",
+        "untested_flagged": "contested",
+        "weakly_supported": "contested",
+        "weakly_supported_narrowed_unproven": "contested",
+    }
+
+    def normalize_status(raw_status: Any) -> str:
+        normalized = str(raw_status).strip().lower()
+        if normalized in status_aliases:
+            return status_aliases[normalized]
+        if "unproven" in normalized or "flagged" in normalized or "weak" in normalized:
+            return "contested"
+        if "support" in normalized and "un" not in normalized:
+            return "supported"
+        return normalized
+
+    if isinstance(raw_value, dict):
+        return {str(claim_id): normalize_status(status) for claim_id, status in raw_value.items()}
+    if isinstance(raw_value, list):
+        statuses: dict[str, str] = {}
+        for item in raw_value:
+            if not isinstance(item, dict):
+                continue
+            claim_id = item.get("claim_id")
+            status = item.get("status")
+            if claim_id and status is not None:
+                statuses[str(claim_id)] = normalize_status(status)
+        return statuses
+    return {}
+
+
+def _kill_source_count_map(raw_value: Any) -> dict[str, int]:
+    if isinstance(raw_value, dict):
+        return {str(criterion_id): int(source_count) for criterion_id, source_count in raw_value.items()}
+    if isinstance(raw_value, list):
+        counts: dict[str, int] = {}
+        for item in raw_value:
+            if not isinstance(item, dict):
+                continue
+            criterion_id = item.get("kill_criterion_id")
+            source_count = item.get("source_count")
+            if criterion_id and source_count is not None:
+                counts[str(criterion_id)] = int(source_count)
+        return counts
+    return {}
+
+
 def choose_next_objective(campaign: Campaign, state: dict[str, Any]) -> str:
+    next_objective = state.get("next_objective")
+    if next_objective:
+        return str(next_objective)
+
     for claim_id in campaign.must_prove_claim_ids:
         claim_state = state["claim_status"][claim_id]
         if claim_state["status"] in {"untested", "contested", "rejected"}:
@@ -17,9 +74,6 @@ def choose_next_objective(campaign: Campaign, state: dict[str, Any]) -> str:
         if criterion_state["status"] != "cleared":
             return f"Stress-test kill criterion `{criterion_id}`: {kill_statement(campaign, criterion_id)}"
 
-    next_objective = state.get("next_objective")
-    if next_objective:
-        return str(next_objective)
     return "Synthesize whether the wedge is pilot-worthy and identify the strongest unresolved objection."
 
 
@@ -58,12 +112,12 @@ def apply_cycle_results(
         claim_state["last_cycle"] = cycle_number
         claim_state["status"] = "contested" if claim_state["supporting_cycles"] else "rejected"
 
-    for claim_id, explicit_status in judge_artifact.get("claim_statuses", {}).items():
+    for claim_id, explicit_status in _claim_status_map(judge_artifact.get("claim_statuses")).items():
         if claim_id in updated["claim_status"]:
             updated["claim_status"][claim_id]["status"] = explicit_status
             updated["claim_status"][claim_id]["last_cycle"] = cycle_number
 
-    source_counts = judge_artifact.get("kill_criterion_source_counts", {})
+    source_counts = _kill_source_count_map(judge_artifact.get("kill_criterion_source_counts"))
     for criterion_id in judge_artifact.get("triggered_kill_criteria", []):
         if criterion_id not in updated["kill_criteria_status"]:
             continue
@@ -157,4 +211,3 @@ def kill_statement(campaign: Campaign, criterion_id: str) -> str:
         if criterion["id"] == criterion_id:
             return criterion["statement"]
     return criterion_id
-

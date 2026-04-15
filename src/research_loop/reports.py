@@ -6,6 +6,13 @@ from typing import Any
 from .campaign import Campaign
 from .utils import ensure_directory
 
+ALLOWED_REPORT_FILES = {
+    "current-brief.md",
+    "objections.md",
+    "pilot.md",
+    "investor.md",
+}
+
 
 def write_reports(root: Path, campaign: Campaign, state: dict[str, Any], latest_judge: dict[str, Any]) -> list[Path]:
     report_dir = ensure_directory(root / "reports" / campaign.slug)
@@ -15,7 +22,23 @@ def write_reports(root: Path, campaign: Campaign, state: dict[str, Any], latest_
         _write_pilot(report_dir / "pilot.md", campaign, state, latest_judge),
         _write_investor(report_dir / "investor.md", campaign, state, latest_judge),
     ]
+    apply_merged_report_mutations(report_dir, state)
     return files
+
+
+def apply_merged_report_mutations(report_dir: Path, state: dict[str, Any]) -> None:
+    merged = state.get("merged_mutations", {})
+    if not isinstance(merged, dict):
+        return
+    for target_file, mutation in merged.items():
+        if target_file not in ALLOWED_REPORT_FILES:
+            continue
+        if not isinstance(mutation, dict):
+            continue
+        content = mutation.get("content")
+        if not isinstance(content, str) or not content.strip():
+            continue
+        (report_dir / target_file).write_text(content, encoding="utf-8")
 
 
 def _write_current_brief(path: Path, campaign: Campaign, state: dict[str, Any], artifact: dict[str, Any]) -> Path:

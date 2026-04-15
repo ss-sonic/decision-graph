@@ -1,0 +1,94 @@
+{
+  "idea": {
+    "name": "Decision Graph",
+    "description": "AI-native decision infrastructure for structured, updateable decision-making over time."
+  },
+  "wedge": {
+    "slug": "pip-continuity",
+    "name": "PIP continuity for managers",
+    "description": "A narrow manager workflow focused on 30/60/90-day performance improvement plans and other multi-week employee performance cases."
+  },
+  "idea_source": "decision-graph.md",
+  "notes_sources": [],
+  "evidence_policy": {
+    "mode": "desk_research_plus_your_notes",
+    "founder_notes_can_validate_claims": false
+  },
+  "required_artifacts": [
+    "researcher",
+    "skeptic",
+    "rebuttal",
+    "judge"
+  ],
+  "engine_roles": {
+    "researcher": "claude",
+    "skeptic": "codex",
+    "rebuttal": "claude",
+    "judge": "codex"
+  },
+  "core_claims": [
+    {
+      "id": "continuity_beats_chat",
+      "priority": 1,
+      "must_prove": true,
+      "statement": "For 30/60/90-day PIPs and similar multi-week performance cases, structured decision continuity creates materially more value than one-off ChatGPT advice plus notes."
+    },
+    {
+      "id": "pip_cases_recur_over_time",
+      "priority": 2,
+      "must_prove": true,
+      "statement": "PIP and performance-concern cases are revisited across enough sessions, facts, stakeholders, and decision points to justify a persistent decision object."
+    },
+    {
+      "id": "behavior_change_is_plausible",
+      "priority": 3,
+      "must_prove": true,
+      "statement": "Managers will use a dedicated PIP decision trail because the workflow already requires defensible documentation, chronology, and follow-through."
+    },
+    {
+      "id": "pilot_can_be_narrow",
+      "priority": 4,
+      "must_prove": true,
+      "statement": "A pilot can focus only on active PIP or pre-PIP performance cases without becoming a full HRIS, performance management suite, or general decision operating system."
+    },
+    {
+      "id": "investor_story_has_substance",
+      "priority": 5,
+      "must_prove": false,
+      "statement": "If PIP continuity works, it provides a credible wedge into broader people-decision infrastructure rather than a thin advice wrapper."
+    }
+  ],
+  "kill_criteria": [
+    {
+      "id": "chat_docs_are_good_enough",
+      "priority": 1,
+      "statement": "Managers can solve the PIP continuity problem well enough with ChatGPT, Google Docs, HR templates, and calendar reminders."
+    },
+    {
+      "id": "pip_volume_too_low",
+      "priority": 2,
+      "statement": "Individual managers face active PIP or pre-PIP cases too rarely for the workflow to support repeat usage or a compelling pilot."
+    },
+    {
+      "id": "hris_owns_workflow",
+      "priority": 3,
+      "statement": "Existing HRIS/performance tools already own the PIP workflow strongly enough that a separate decision-continuity tool cannot wedge in."
+    },
+    {
+      "id": "trust_and_compliance_block_adoption",
+      "priority": 4,
+      "statement": "Managers or companies will not trust an AI-assisted standalone tool with sensitive employee performance context."
+    },
+    {
+      "id": "wedge_too_punitive_or_sensitive",
+      "priority": 5,
+      "statement": "Starting with PIPs creates too much legal, ethical, or emotional risk for an early pilot compared with a safer people-decision workflow."
+    }
+  ],
+  "verdict_rules": {
+    "rejection_confidence_threshold": 0.7,
+    "plausible_confidence_threshold": 0.7,
+    "stalled_after_consecutive_no_evidence_cycles": 3,
+    "plausible_requires_pilot_fields": true
+  }
+}

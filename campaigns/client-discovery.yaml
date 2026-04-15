@@ -1,0 +1,105 @@
+{
+  "idea": {
+    "name": "Decision Graph",
+    "description": "AI-native decision infrastructure for structured, updateable decision-making over time."
+  },
+  "wedge": {
+    "slug": "client-discovery",
+    "name": "Client and product-shape discovery",
+    "description": "A comparative campaign to identify which client segment has enough decision fatigue, decision cost, repeat context, and switching pressure to justify a Decision Graph pilot."
+  },
+  "idea_source": "decision-graph.md",
+  "notes_sources": [],
+  "evidence_policy": {
+    "mode": "desk_research_plus_your_notes",
+    "founder_notes_can_validate_claims": false
+  },
+  "required_artifacts": [
+    "researcher",
+    "skeptic",
+    "rebuttal",
+    "judge"
+  ],
+  "engine_roles": {
+    "researcher": "claude",
+    "skeptic": "codex",
+    "rebuttal": "claude",
+    "judge": "codex"
+  },
+  "core_claims": [
+    {
+      "id": "right_client_segment_exists",
+      "priority": 1,
+      "must_prove": true,
+      "statement": "At least one identifiable client segment has recurring, costly, context-heavy decisions where a Decision Graph-style product could plausibly beat current workflows."
+    },
+    {
+      "id": "decision_fatigue_maps_to_workflow",
+      "priority": 2,
+      "must_prove": true,
+      "statement": "The target segment's decision fatigue and decision failures are not just abstract stress; they map to a repeatable workflow where software can reduce errors, drift, missed context, or rework."
+    },
+    {
+      "id": "product_shape_can_be_tuned",
+      "priority": 3,
+      "must_prove": true,
+      "statement": "The product can be shaped around the winning client segment's existing workflow rather than forcing a generic decision operating system."
+    },
+    {
+      "id": "switching_pressure_exists",
+      "priority": 4,
+      "must_prove": true,
+      "statement": "The winning segment has enough dissatisfaction with current workarounds to try a dedicated tool or workflow-specific decision layer."
+    },
+    {
+      "id": "pilot_path_is_accessible",
+      "priority": 5,
+      "must_prove": true,
+      "statement": "There is a realistic path to a small pilot with reachable users, safe-enough data handling, and measurable outcomes."
+    },
+    {
+      "id": "investor_story_has_substance",
+      "priority": 6,
+      "must_prove": false,
+      "statement": "The winning segment creates a believable expansion path and durable category story beyond a thin AI wrapper."
+    }
+  ],
+  "kill_criteria": [
+    {
+      "id": "no_segment_has_urgent_behavior_change",
+      "priority": 1,
+      "statement": "Decision fatigue is real, but no tested client segment has urgency strong enough to change behavior from chat, docs, spreadsheets, meetings, or existing systems."
+    },
+    {
+      "id": "pain_is_not_software_addressable",
+      "priority": 2,
+      "statement": "The strongest decision pain comes from incentives, politics, authority, or organizational dysfunction rather than a software-addressable continuity problem."
+    },
+    {
+      "id": "existing_tools_are_good_enough",
+      "priority": 3,
+      "statement": "Existing systems of record, collaboration tools, or chat-based AI already solve the practical workflow well enough for the most plausible segments."
+    },
+    {
+      "id": "trust_or_data_blocks_adoption",
+      "priority": 4,
+      "statement": "The data sensitivity and trust burden block adoption in the segments where decision cost is highest."
+    },
+    {
+      "id": "buyer_user_mismatch_is_too_large",
+      "priority": 5,
+      "statement": "The person with the pain is not the buyer, and the buyer has no strong reason to adopt or approve the tool."
+    },
+    {
+      "id": "segment_is_too_small_or_infrequent",
+      "priority": 6,
+      "statement": "The most plausible segment has decisions that are too rare, bespoke, or narrow to support repeated usage or a meaningful business."
+    }
+  ],
+  "verdict_rules": {
+    "rejection_confidence_threshold": 0.7,
+    "plausible_confidence_threshold": 0.7,
+    "stalled_after_consecutive_no_evidence_cycles": 3,
+    "plausible_requires_pilot_fields": true
+  }
+}

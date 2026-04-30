@@ -12,6 +12,7 @@ dependencies = []
 
 [project.scripts]
 research-loop = "research_loop.cli:main"
+doc-loop = "research_loop.doc_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/research_loop"]

@@ -56,15 +56,10 @@ class ClaudeAdapter(EngineAdapter):
             prompt_text,
         ]
         if self.supports_json_schema():
-            schema_json = json.dumps(self._schema_payload(), separators=(",", ":"))
+            schema_json = json.dumps(self.output_schema(role), separators=(",", ":"))
             command[4:4] = ["--json-schema", schema_json]
         self._run(command, output_path)
         return output_path
-
-    def _schema_payload(self) -> dict:
-        from ..prompts import artifact_schema
-
-        return artifact_schema()
 
     def supports_json_schema(self) -> bool:
         try:

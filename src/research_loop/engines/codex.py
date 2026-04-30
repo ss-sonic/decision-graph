@@ -39,7 +39,7 @@ class CodexAdapter(EngineAdapter):
         if search_required and not self.preflight().search_available:
             raise EngineError("Codex search was requested but is not enabled.")
 
-        schema_path = self._write_schema_file()
+        schema_path = self._write_schema_file(role)
         output_path = output_dir / "raw.json"
         command = [
             "codex",

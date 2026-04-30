@@ -60,9 +60,12 @@ class EngineAdapter:
         validate_normalized_artifact(normalized)
         return normalized
 
-    def _write_schema_file(self) -> Path:
+    def output_schema(self, role: str) -> dict[str, Any]:
+        return artifact_schema()
+
+    def _write_schema_file(self, role: str = "") -> Path:
         handle = tempfile.NamedTemporaryFile("w", delete=False, suffix=".json", encoding="utf-8")
-        json.dump(artifact_schema(), handle)
+        json.dump(self.output_schema(role), handle)
         handle.flush()
         handle.close()
         return Path(handle.name)

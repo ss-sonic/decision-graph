@@ -75,6 +75,7 @@ def scenario() -> dict[str, object]:
             "editor": {
                 "summary": "Applied approved evidence-backed edit.",
                 "revised_markdown": "# Sample\n\nDecision quality can create material rework [ev-1].\n",
+                "internal_notes_markdown": "# Internal Notes\n\nKeep the private evidence out of the public draft.\n",
                 "changelog": ["Softened and evidenced the main claim."],
                 "applied_proposal_ids": ["edit-1"],
             },
@@ -146,6 +147,32 @@ class DocLoopTests(unittest.TestCase):
             root = Path(tmpdir)
             sample = root / "sample.md"
             sample.write_text("# Sample\n\nDecision quality matters.\n", encoding="utf-8")
+            support = root / "supporting.md"
+            support.write_text(
+                "# Supporting Evidence\n\n"
+                "## Evidence Items\n\n"
+                "### EV-PRIVATE-1: Internal repository\n"
+                "- Type: private_repo\n"
+                "- Locator: https://example.com/private\n"
+                "- Supports: Decision quality workflow exists\n"
+                "- Publicly quotable: no\n",
+                encoding="utf-8",
+            )
+            spec = root / "sample.docspec.yaml"
+            spec.write_text(
+                "document_type: partner_proposal\n"
+                "author: SampleCo\n"
+                "audience: Partner BD team\n"
+                "goal: Secure a technical exploration\n"
+                "tone: confident and clear\n"
+                "risk_posture: defensible_not_defensive\n"
+                "private_evidence_policy: use_for_confidence_do_not_quote\n"
+                "diligence_language: internal_notes_only\n"
+                "forbidden_public_patterns:\n"
+                "  - publicly verifiable status is limited\n"
+                "  - unverified\n",
+                encoding="utf-8",
+            )
             copy_doc_prompts(root)
 
             scenario_path = root / "mock-scenario.json"
@@ -157,7 +184,19 @@ class DocLoopTests(unittest.TestCase):
             env["RESEARCH_LOOP_MOCK_FILE"] = str(scenario_path)
 
             subprocess.run(
-                [sys.executable, str(SCRIPT), "run", "--doc", "sample.md", "--cycles", "1"],
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "run",
+                    "--doc",
+                    "sample.md",
+                    "--supporting-doc",
+                    "supporting.md",
+                    "--spec",
+                    "sample.docspec.yaml",
+                    "--cycles",
+                    "1",
+                ],
                 cwd=root,
                 env=env,
                 check=True,
@@ -188,7 +227,20 @@ class DocLoopTests(unittest.TestCase):
             cycle_dir = root / "doc-runs" / "sample" / "cycle-0001"
             self.assertTrue((cycle_dir / "input.md").exists())
             self.assertTrue((cycle_dir / "change-log.md").exists())
+            self.assertTrue((cycle_dir / "internal-notes.md").exists())
             self.assertTrue((cycle_dir / "judge" / "normalized.json").exists())
+            state = json.loads((root / "doc-runs" / "sample" / "state.json").read_text(encoding="utf-8"))
+            self.assertEqual(state["supporting_docs"], [str(support.resolve())])
+            self.assertEqual(state["doc_spec_path"], str(spec.resolve()))
+            self.assertEqual(Path(state["latest_internal_notes"]).resolve(), (cycle_dir / "internal-notes.md").resolve())
+            prompt = (cycle_dir / "researcher" / "prompt.txt").read_text(encoding="utf-8")
+            self.assertIn("Supporting Evidence Documents", prompt)
+            self.assertIn("EV-PRIVATE-1", prompt)
+            self.assertIn("do not expose private locators", prompt)
+            editor_prompt = (cycle_dir / "editor" / "prompt.txt").read_text(encoding="utf-8")
+            self.assertIn("Document Intent Spec", editor_prompt)
+            self.assertIn("partner_proposal", editor_prompt)
+            self.assertIn("internal notes", editor_prompt.lower())
 
 
 if __name__ == "__main__":

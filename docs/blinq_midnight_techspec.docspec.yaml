@@ -1,0 +1,41 @@
+document_type: technical_spec
+author: Blinq
+audience: Midnight technical, ecosystem, and solution architecture team
+goal: Present a credible first-pass architecture for building a privacy-enabled prediction-market CLOB on Midnight and invite technical review
+tone: precise, implementation-oriented, confident, reviewable
+risk_posture: technically_defensible
+private_evidence_policy: use_for_confidence_do_not_quote
+diligence_language: inline_as_design_assumptions
+public_document_rules:
+  - Write as Blinq proposing a technical architecture to Midnight.
+  - Preserve implementation specificity; do not turn the spec into a marketing memo.
+  - Keep valid technical caveats inline as design assumptions, constraints, or open questions.
+  - Move private repository paths, private URLs, and proof-pack reminders to internal notes.
+  - Do not expose private repository paths, local filesystem paths, private beta URLs, or private-only evidence locators.
+  - Do not pretend Midnight execution works like EVM; call out Compact-specific redesign points.
+  - Prefer precise statements such as "proposed", "to validate with Midnight", "Phase 1 assumption", and "requires Midnight review" where the platform behavior is not yet verified.
+  - Do not add unsupported protocol-level claims about Midnight assets, proofs, events, or privacy semantics.
+preferred_public_phrasing:
+  - This is a proposed architecture for Midnight technical review, not a final implementation spec.
+  - Blinq's existing EVM-compatible CLOB architecture can inform market/order semantics, matching rules, service boundaries, and product flow.
+  - Privacy-sensitive execution paths must be specified against Midnight's Compact model rather than directly ported from EVM contracts.
+  - Off-chain matching is used for latency; Midnight settlement is used for correctness, privacy state transitions, and verifiable resolution.
+  - Open platform questions should be validated with the Midnight team before implementation begins.
+forbidden_public_patterns:
+  - private repo
+  - local filesystem
+  - /Users/development
+  - deva.blinq.fi
+  - publicly verifiable Blinq status is more limited
+  - claimed CLOB
+  - unverified
+  - public evidence does not verify
+  - does not provide public contract addresses
+  - should be positioned as an early-stage team
+internal_notes_should_include:
+  - private Blinq implementation artifacts used for confidence
+  - Midnight-specific assumptions that require platform-team validation
+  - security, oracle, settlement, and privacy model risks
+  - concrete questions for Midnight technical review
+  - places where the spec may be using EVM mental models accidentally
+

@@ -6,6 +6,7 @@ Rules:
 - Do not do external research in this step.
 - Extract claims as written, including claims that are implied by structure or framing.
 - Prioritize claims that would affect user trust, investor belief, or product direction.
+- Use the Document Intent Spec to distinguish target-audience problems from internal diligence problems.
 - Flag vague language, unsupported leaps, and missing audience assumptions.
 - Return JSON only matching the required schema.
 

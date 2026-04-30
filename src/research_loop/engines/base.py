@@ -103,11 +103,13 @@ class EngineAdapter:
                     )
 
         stderr_path.write_text(stderr, encoding="utf-8")
+        if stdout:
+            output_path.write_text(stdout, encoding="utf-8")
         if process.returncode != 0:
+            details = stderr.strip() or stdout.strip() or "(no stdout/stderr from engine)"
             raise EngineError(
-                f"{self.engine_name} invocation failed with code {process.returncode}:\n{stderr.strip()}"
+                f"{self.engine_name} invocation failed with code {process.returncode}:\n{details}"
             )
-        output_path.write_text(stdout, encoding="utf-8")
 
 
 def validate_normalized_artifact(payload: dict[str, Any]) -> None:

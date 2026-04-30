@@ -1,0 +1,40 @@
+document_type: partner_proposal
+author: Blinq
+audience: Midnight BD, ecosystem, and technical partnership team
+goal: Secure a technical and GTM exploration for launching a privacy-enabled prediction market on Midnight
+tone: confident, clear, partnership-oriented, technically credible
+risk_posture: defensible_not_defensive
+private_evidence_policy: use_for_confidence_do_not_quote
+diligence_language: internal_notes_only
+public_document_rules:
+  - Write as Blinq speaking to Midnight, not as an external analyst reviewing Blinq.
+  - Keep the public draft sendable as a partnership proposal.
+  - Convert critique into clean, supportable positioning.
+  - Move proof gaps, caveats, private evidence reminders, and diligence tasks to internal notes.
+  - Do not expose private repository paths, local filesystem paths, private beta URLs, or private-only evidence locators.
+  - Do not weaken true Blinq-owned claims just because proof is private; phrase them as available for technical diligence.
+preferred_public_phrasing:
+  - Blinq has an EVM-compatible CLOB and prediction-market derivatives stack available for Midnight technical diligence.
+  - Blinq brings reusable market, order-book, margining, and trading-system components that can inform a Midnight-native implementation.
+  - The Midnight implementation should treat existing EVM components as reusable architecture and product logic, while rebuilding privacy-sensitive execution paths in Compact.
+  - Blinq and Midnight can define a differentiated category: privacy-first prediction markets.
+forbidden_public_patterns:
+  - Publicly verifiable Blinq status is more limited
+  - claimed CLOB
+  - claimed product direction
+  - unverified
+  - public evidence does not verify
+  - does not provide public contract addresses
+  - before this is presented
+  - do not assume
+  - unless Blinq supplies direct proof artifacts
+  - should be positioned as an early-stage team
+  - currently unverified
+  - treated as unproven
+  - requires technical diligence before being treated
+internal_notes_should_include:
+  - private proof used by the rewrite, without leaking it into the public document
+  - diligence items Midnight may ask for
+  - claims that still require metrics, audits, or deployment proof
+  - recommended next evidence to collect
+

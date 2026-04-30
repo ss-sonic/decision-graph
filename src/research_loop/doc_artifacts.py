@@ -183,10 +183,11 @@ def skeptic_schema() -> dict[str, Any]:
 
 def editor_schema() -> dict[str, Any]:
     return strict_object(
-        required=["summary", "revised_markdown", "changelog", "applied_proposal_ids"],
+        required=["summary", "revised_markdown", "internal_notes_markdown", "changelog", "applied_proposal_ids"],
         properties={
             "summary": {"type": "string"},
             "revised_markdown": {"type": "string"},
+            "internal_notes_markdown": {"type": "string"},
             "changelog": string_array_schema(),
             "applied_proposal_ids": string_array_schema(),
         },
@@ -266,6 +267,8 @@ def _validate_researcher(payload: dict[str, Any]) -> None:
 def _validate_editor_shape(payload: dict[str, Any]) -> None:
     if not isinstance(payload.get("revised_markdown"), str) or not payload["revised_markdown"].strip():
         raise EngineError("editor revised_markdown must be non-empty")
+    if not isinstance(payload.get("internal_notes_markdown"), str):
+        raise EngineError("editor internal_notes_markdown must be a string")
     if not isinstance(payload.get("changelog"), list):
         raise EngineError("editor changelog must be a list")
     if not isinstance(payload.get("applied_proposal_ids"), list):

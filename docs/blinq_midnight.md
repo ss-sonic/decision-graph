@@ -1,19 +1,19 @@
-# **Blinq \<\> Midnight Roadmap**
+# Blinq × Midnight Roadmap
 
-## **Launching the First Privacy-Enabled Decentralized Prediction Market**
+## Launching a Privacy-Enabled Prediction Market on Midnight
 
-## **1\. Why Privacy Matters**
+## 1. Why Privacy Matters
 
 Prediction markets are not just financial markets. They are belief markets.
 
-Today, most prediction market activity is public by default. A user’s wallet, positions, sizing, entry/exit history and strategy can often be traced publicly. This is a real barrier for serious traders, larger wallets, and users trading sensitive markets.
+Today, most prediction market activity is public by default. A user's wallet, positions, sizing, entry/exit history, and strategy can often be traced publicly. This is a real barrier for serious traders, larger wallets, and users trading sensitive markets.
 
-It leads to various issues like:
+Public-by-default trading creates concrete risks for prediction-market users:
 
-* Niche markets affected by copy trading volumes that skew the pricing
-* Copy trading leading to loss of trading strategy being redundant or ineffective
-* Traceability to other bets or other positions across web3 protocols
-* Safety risk from identity disclosure (doxxing) causing harm to person & family in real life
+* visible positions can expose conviction, sizing, timing, and strategy
+* visible wallets make large traders easy to monitor, copy, or counter-position against
+* public order flow can contribute to manipulation and suspicious-volume dynamics in thinner markets
+* traceable positions can connect market activity to real-world identity, creating legal, reputational, and personal-safety exposure
 
 Users may be comfortable trading an event, but not comfortable broadcasting:
 
@@ -23,44 +23,43 @@ Users may be comfortable trading an event, but not comfortable broadcasting:
 * how they are positioned across related markets
 * which political, macro, sports, crypto, or cultural outcomes they care about
 
-This is why privacy is not cosmetic for prediction markets.
+This is why privacy is not cosmetic for prediction markets. It is a core product unlock.
 
-It is a core product unlock. To meet this demand & address the user concerns;
+To meet this demand and address user concerns, Blinq is building a prediction market platform with a privacy layer.
 
-Blinq is building a prediction market platform with a privacy layer
+## 2. Synergies
 
-## **2\. Synergies**
+**Midnight can position privacy-enabled prediction markets as a natural consumer-facing use case for programmable privacy, with Blinq as a concrete partner application to explore that thesis.**
 
-**Midnight can position itself as the go-to privacy layer for prediction markets, with Blinq com as the first application proving that thesis.**
+Blinq has an EVM-compatible CLOB and prediction-market derivatives stack available for Midnight technical diligence. Blinq brings reusable market, order-book, margining, and trading-system components that can inform a Midnight-native implementation, including:
 
-Blinq has built out most of the prediction market infrastructure stack \- CLOBs, Oracles, Data feeds, Indexers, p-AMMs, margining & liquidation mechanisms, UI/UX. This enables Blinq to offer
-
-* leverage on top of Polymarket
-* an existing EVM-compatible CLOB architecture
-* user acquisition through Polymarket-native leverage
+* EVM-compatible CLOB architecture and market/order semantics
+* prediction-market exchange implementation experience
+* margining, liquidation, indexing, and trading-flow components for technical review
+* an internal beta product surface that can be reviewed during partner diligence
 
 Midnight brings:
 
 * privacy-first infrastructure
 * a strong base layer for protected user activity
 * a differentiated launch narrative for consumer-facing private markets
-* Cross chain composability
+* cross-chain composability
 
-Together, Blinq and Midnight can create a new category: **privacy-first prediction markets**
+Together, Blinq and Midnight can define a differentiated category: **privacy-first prediction markets**.
 
-## **3\. Roadmap**
+## 3. Roadmap
 
-## **Phase 1: Build Blinq’s Privacy enabled Spot Prediction Market on Midnight**
+### Phase 1: Build Blinq's Privacy-Enabled Spot Prediction Market on Midnight
 
-Blinq builds EVM-compatible spot prediction market CLOB to Midnight.
+Blinq aims to use its existing EVM-compatible spot prediction market CLOB as the architecture and product baseline for a Midnight-native implementation.
 
-Due to Midnight’s technology, it does not need to be rebuilt from zero. The goal is to take Blinq’s existing CLOB architecture and launch:
+The Midnight implementation should treat Blinq's existing EVM components as reusable architecture and product logic, while rebuilding privacy-sensitive execution paths in Compact. The goal is to carry forward existing market/order semantics, trading flows, indexing assumptions, and settlement logic into a Midnight-native design:
 
-**“A privacy-enabled prediction market where users can trade without exposing their full position, wallet-level activity, or strategy publicly”**
+**"A privacy-enabled prediction market where users can trade without exposing their full position, wallet-level activity, or strategy publicly."**
 
 An achievable V1 product would include:
 
-* port the existing EVM-compatible CLOB logic to Midnight
+* carry forward existing market/order semantics and product logic from Blinq's EVM-compatible CLOB, with privacy-sensitive execution paths rebuilt in Compact
 * support simple YES/NO prediction markets
 * preserve familiar spot market trading flows
 * add privacy around user positions
@@ -70,58 +69,73 @@ An achievable V1 product would include:
 * support selective disclosure where needed
 * define clear settlement logic on Midnight
 
-**Phase 2: Joint Launch With Midnight**
+A clear V1 privacy model should distinguish three layers:
 
-The ideal timing would be to launch Blinq’s private spot prediction market around Midnight’s mainnet or public ecosystem push.
+* **Public:** market definitions, resolution outcomes, and aggregate price/liquidity data where needed for market integrity
+* **Private by default:** user identity, wallet-level market history, position size, entry/exit timing, and cross-market exposure
+* **Selectively disclosed:** proofs or records needed for settlement, compliance, partner reporting, or user-controlled account recovery
 
-The GTM angle will be **Blinq is launching the first privacy-enabled decentralized prediction market on Midnight.**
+### Phase 2: Joint Launch With Midnight
 
-This gives Midnight a concrete consumer-facing privacy use case from DAY ONE of its launch
+The ideal timing would be to align Blinq's private spot prediction market with Midnight's current ecosystem rollout, including the phases focused on stable mainnet dApps and broader developer adoption.
+
+The GTM angle should be: **Blinq is launching a privacy-enabled prediction market on Midnight, designed to make private trading behavior a consumer-facing use case for programmable privacy.**
+
+This gives Midnight a concrete, market-facing application to showcase as its privacy app ecosystem expands.
 
 Marketing communication to focus on:
 
-* joint Midnight x Blinq announcement
+* joint Midnight × Blinq announcement
 * private prediction market launch campaign
 * incentivized trading campaign
 * creator-led markets
 * liquidity incentives
-* migration campaign for Blinq’s Polymarket leverage users
+* migration campaign for Blinq's Polymarket-adjacent leverage users
 
-The users Blinq acquires through Polymarket leverage can be routed into the Midnight-native product once it is live.
+Blinq's Polymarket-adjacent product flows can become a top-of-funnel for the Midnight-native product once it is live, with migration targets set after Blinq and Midnight review beta usage, deposits, volume, and repeat-trader metrics during diligence.
 
-## **Phase 3: Launch Privacy enabled Leverage on Blinq Prediction Markets**
+### Phase 3: Launch Privacy-Enabled Leverage on Blinq Prediction Markets
 
 Once the private spot market has enough liquidity, Blinq will launch leverage on top of its own Midnight-native markets.
 
-This is the full-stack version:
+This is the full-stack version: **private spot prediction markets + private leverage**.
 
-**private spot prediction markets \+ private leverage**
+At that point, Blinq is no longer only routing leverage to Polymarket-adjacent flows; it can support leverage on its own private markets as well.
 
-At that point, Blinq is no longer only routing leverage to Polymarket. It can support leverage on its own private markets as well.
+Phase 3 should be scoped jointly with Midnight engineering because private leverage introduces harder design questions than private spot trading. The design target is:
 
-Phase 3 can include:
+* leverage on selected Blinq markets after spot liquidity is established
+* private margin positions with proof-based solvency checks
+* market-level risk parameters and position caps that can be enforced without exposing the full user portfolio
+* liquidation paths that disclose only the minimum information needed to protect solvency and LPs
+* LP / vault participation with aggregate risk visibility and user-level privacy preserved
 
-* leverage on selected Blinq markets
-* private margin positions
-* risk controls per market
-* liquidation logic
-* position caps
-* LP / vault participation
-* market-level risk parameters
+## 4. How Midnight Wins
 
-## **4\. How Midnight Wins**
-
-This is a strong use case for Midnight because privacy is central to its’ product & creates a unique entry point to privacy focussed prediction markets through Blinq.
+This is a strong use case for Midnight because privacy is central to its product and creates a unique entry point to privacy-focused prediction markets through Blinq.
 
 **The Strategic Fit:**
 
-* **Privacy as a Native Feature:** Prediction markets (Polymarket) expose user beliefs, sizing, timing, market selection, and strategy. Blinq could utilize Midnight to make privacy a competitive advantage, allowing users to trade with high conviction without exposing their edge.
-* **The High-Intent Use Case:** Blinq provides a simple, consumer-facing entry point to the Midnight ecosystem, demonstrating that privacy-first infrastructure can drive massive capital efficiency and institutional-grade leverage in the prediction markets space.
+* **Privacy as a Native Feature:** Prediction markets like Polymarket expose user beliefs, sizing, timing, market selection, and strategy. Blinq can use Midnight to make privacy a competitive advantage, allowing users to trade with high conviction without exposing their edge.
+* **The High-Intent Use Case:** Blinq can provide a simple, consumer-facing entry point to the Midnight ecosystem, demonstrating how programmable privacy can support higher-conviction trading, selective disclosure, and more sophisticated prediction-market risk products over time.
 
-For Midnight, Blinq can become a flagship application that shows privacy in a simple and consumer-facing way:
+For Midnight, Blinq can become a flagship application that shows privacy in a simple and consumer-facing way.
 
 **Market Momentum: Opportunity**
 
-1. **Exponential Growth:** Prediction markets have evolved into a global "**truth layer**," scaling from **\<$1B in 2024 to a $25B monthly run-rate in 2026**. TradFi analysts estimate that by 2030, annual volumes could exceed **$1 trillion**, paralleling the historical growth trajectory of crypto perpetual futures and representing a 3x expansion from current levels.
-2. **Institutional Adoption:** Sector leaders Kalshi and Polymarket now each process \~**$10B in monthly notional volume**. Polymarket specifically anchors the ecosystem with **$1.3B in TVL ($450M+ OI)**, facilitating **100M+ monthly transactions** across **750K+ monthly active users** (2.6M+ cumulative unique users).
-3. **Execution Privacy:** Native Privacy has become a foundational anchor for institutional Web3 adoption. Without execution privacy, the market remains structurally broken for sophisticated participants who face a permanent 'Alpha Tax' via front-running and strategy leakage
+1. **Market Growth:** Prediction markets have moved from a niche crypto-native category into a high-volume event-trading market. TRM Labs reported that sector-wide monthly volume exceeded **$20B in January 2026**, up from roughly **$1.2B in early 2025**. Bernstein's April 2026 coverage forecasts approximately **$240B in 2026 volume** and **$1T in annual volume by 2030**; Eilers & Krejcik's December 2025 report independently projects the category could reach **$1T annually by 2030**.
+2. **Scaled Venues:** The category now has two scaled reference venues. In March 2026, Kalshi processed approximately **$13.07B in notional volume** and **88.4M transactions**, while Polymarket recorded its first month above **$10B in monthly volume**. Polymarket's on-chain depth has also continued to grow, with TVL crossing roughly **$500M in April 2026** after its CLOB v2 / pUSD migration.
+3. **Execution Privacy:** Without execution privacy, prediction-market participants trade in an environment where positions, sizing, timing, and wallet relationships can be monitored. Recent public reporting shows that high-profile Polymarket positions can be linked to identifiable individuals through media investigation, while independent research has flagged suspicious-volume dynamics and profit concentration on public prediction-market rails. For serious traders, that creates a material strategy-leakage and identity-exposure problem that privacy can directly address.
+
+## 5. Partnership Ask
+
+Blinq is asking Midnight to begin a focused technical and GTM exploration for a privacy-enabled prediction market launch on Midnight.
+
+Proposed next steps:
+
+* schedule a 60-90 minute technical diligence session with Midnight engineering to review Blinq's EVM-compatible CLOB, market/order semantics, and the Compact design work needed for a Midnight-native implementation
+* align with the Midnight ecosystem team on whether this should enter a grant, launch-partner, or ecosystem-support track
+* define a joint V1 scope covering simple YES/NO markets, privacy boundaries, settlement, public market data, and selective disclosure requirements
+* agree on a proposed 30/60/90-day plan for technical architecture, prototype milestones, and GTM timing
+
+The immediate ask is a Midnight engineering and ecosystem review session, followed by a shared decision on whether to move into a scoped build plan for a V1 privacy-enabled spot prediction market.

@@ -34,8 +34,11 @@ def initialize_doc_state(root: Path, doc_path: Path) -> dict[str, Any]:
         "verdict": "not_started",
         "next_focus": "Extract and strengthen the highest-impact unsupported claims in the document.",
         "latest_revision": None,
+        "latest_internal_notes": None,
         "latest_cycle_dir": None,
         "latest_artifacts": {},
+        "supporting_docs": [],
+        "doc_spec_path": None,
         "history": [],
     }
 
@@ -46,6 +49,9 @@ def load_or_initialize_doc_state(root: Path, doc_path: Path) -> dict[str, Any]:
         state = read_json(path)
         state.setdefault("latest_artifacts", {})
         state.setdefault("history", [])
+        state.setdefault("supporting_docs", [])
+        state.setdefault("doc_spec_path", None)
+        state.setdefault("latest_internal_notes", None)
         return state
     state = initialize_doc_state(root, doc_path)
     save_doc_state(root, doc_path, state)

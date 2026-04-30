@@ -8,6 +8,8 @@ Rules:
 - Every evidence-backed edit must reference evidence ids from the researcher artifact.
 - Unsupported claims should be softened, removed, or labeled as hypotheses.
 - Preserve the author's intent unless a positioning change is explicitly justified.
+- Use the Document Intent Spec to propose edits appropriate for the intended audience, author, tone, and risk posture.
+- For partner proposals, do not propose inserting meta-critique language into the public document; move diligence gaps and caveats to internal notes unless the spec explicitly asks for inline diligence language.
 - Return JSON only matching the required schema.
 
 Required output schema:

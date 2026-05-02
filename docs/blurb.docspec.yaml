@@ -1,0 +1,32 @@
+document_type: short_outbound_message
+author: Blinq
+audience: Ryan at Midnight
+goal: Get Ryan to review the roadmap and discuss the proposal on the next call
+tone: concise, warm, professional, founder-led, not salesy
+risk_posture: clear_not_hypey
+private_evidence_policy: not_needed
+diligence_language: none
+public_document_rules:
+  - Keep the message short and sendable.
+  - Preserve the human tone.
+  - Prefer one or two short paragraphs.
+  - Make the ask clear without sounding pushy.
+  - Do not add unsupported claims.
+  - Do not turn the message into a pitch deck summary.
+  - Avoid jargon unless it is central to the relationship.
+preferred_public_phrasing:
+  - Since our last conversation
+  - strong fit
+  - roadmap document
+  - discuss on our next call
+forbidden_public_patterns:
+  - win-win outcome
+  - laying down these thoughts
+  - Prime Brokerage
+  - Programmable Privacy based chain
+  - greater detail to discuss
+internal_notes_should_include:
+  - alternate versions if useful
+  - tone tradeoffs
+  - any wording that may sound too salesy or too vague
+

@@ -1,0 +1,56 @@
+document_type: sharia_design_proposal
+author: Blinq
+audience: Islamic finance advisors, Sharia scholars, compliance reviewers, and strategic partners
+goal: Present Blinq as a candidate information-market design for Sharia review, showing how the product can avoid gambling-like mechanics and align with Islamic finance constraints
+tone: careful, rigorous, respectful, non-theological-overclaiming, design-oriented
+risk_posture: high_caution
+private_evidence_policy: use_for_confidence_do_not_quote
+diligence_language: inline_as_review_requirements
+strict_public_pattern_validation: false
+public_document_rules:
+  - Write as a design proposal for qualified Sharia review, not as a fatwa or final compliance opinion.
+  - Do not claim that Blinq is halal, Sharia-compliant, or religiously permissible without qualified scholar approval.
+  - 'Frame permissibility as conditional: "can be argued", "may be made more defensible", "subject to Sharia review", or "candidate design".'
+  - Preserve the distinction between information markets, hedging/risk management, and recreational wagering.
+  - Treat riba, gharar, and maysir as serious constraints, not rhetorical objections to dismiss.
+  - 'Keep core design constraints explicit: no leverage, no interest, full collateralization, objective resolution, curated market categories, market-integrity controls, responsible access, and scholar governance.'
+  - Avoid sweeping comparisons that imply conventional finance instruments automatically validate prediction markets.
+  - 'Include a clear review boundary: final Sharia approval requires qualified scholars, jurisdictional context, detailed contract terms, and product implementation review.'
+  - If evidence is uncertain or contested, present it as an open issue or internal note rather than a confident public claim.
+preferred_public_phrasing:
+  - Blinq should be evaluated as a candidate onchain information market, not assumed to be Sharia-compliant by default.
+  - The strongest Sharia-aligned design is spot-only, non-levered, fully collateralized, objectively resolved, and curated for public-benefit forecasting or legitimate risk management.
+  - The product should avoid riba, minimize gharar through clear market terms, and reduce maysir risk by excluding recreational, harmful, and entertainment-only markets.
+  - A qualified Sharia review process is required before any compliance claim is made publicly.
+  - The proposal distinguishes product design principles from a final religious ruling.
+forbidden_public_assertions:
+  - Blinq is Sharia-compliant
+  - Blinq is halal
+  - This is a fatwa
+  - This document is a fatwa
+  - Sharia approves Blinq
+  - Islamic law permits Blinq
+  - Blinq is scholar-approved
+  - Blinq is automatically compliant
+  - all prediction markets are halal
+  - prediction markets are halal
+  - there is no Sharia issue
+allowed_disclaimer_patterns:
+  - This proposal does not assert that Blinq is Sharia-compliant.
+  - This document is a design proposal for qualified Sharia review. It is not a fatwa, legal opinion, or final Sharia-compliance claim.
+  - This is not a fatwa, legal opinion, or final compliance claim.
+  - Do not claim that Blinq is halal, Sharia-compliant, or religiously permissible without qualified scholar approval.
+  - Blinq should not claim that any product is halal, Sharia-compliant, or religiously permissible unless qualified Sharia scholars have reviewed the actual market categories, contract terms, collateral handling, fee model, oracle process, governance controls, and user-protection mechanics.
+  - A qualified Sharia review process is required before any compliance claim is made publicly.
+forbidden_public_patterns:
+  - definitely halal
+  - Sharia guarantees
+  - not gambling by default
+  - no Sharia issue
+  - automatically compliant
+internal_notes_should_include:
+  - claims that require Islamic finance source support
+  - places where a scholar may disagree with the information-market framing
+  - unresolved issues around maysir, gharar, derivatives, event contracts, and speculation
+  - recommended questions for qualified Sharia advisors
+  - source gaps for AAOIFI, Islamic finance standards, takaful/hedging analogies, and derivatives treatment

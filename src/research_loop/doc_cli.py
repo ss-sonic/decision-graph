@@ -262,10 +262,15 @@ def run_doc_cycle(
     revised_path = cycle_dir / "revised.md"
     internal_notes_path = cycle_dir / "internal-notes.md"
     changelog_path = cycle_dir / "change-log.md"
-    validate_editor_against_doc_spec(editor, doc_spec)
+    validation_warnings = validate_editor_against_doc_spec(editor, doc_spec)
     revised_path.write_text(editor["revised_markdown"].rstrip() + "\n", encoding="utf-8")
-    internal_notes_path.write_text(editor["internal_notes_markdown"].rstrip() + "\n", encoding="utf-8")
+    internal_notes_path.write_text(
+        render_internal_notes(editor["internal_notes_markdown"], validation_warnings),
+        encoding="utf-8",
+    )
     changelog_path.write_text(render_changelog(cycle_number, editor), encoding="utf-8")
+    for warning in validation_warnings:
+        log_doc_line(cycle_log_path, f"WARNING: {warning}")
 
     updated = dict(state)
     updated["cycle_count"] = cycle_number
@@ -320,12 +325,86 @@ def load_current_doc_spec(state: dict[str, Any]) -> dict[str, Any]:
     return load_doc_spec(Path(str(raw_path)) if raw_path else None)
 
 
-def validate_editor_against_doc_spec(editor: dict[str, Any], doc_spec: dict[str, Any]) -> None:
+def validate_editor_against_doc_spec(editor: dict[str, Any], doc_spec: dict[str, Any]) -> list[str]:
     revised = str(editor.get("revised_markdown") or "")
+    assertions = [item for item in doc_spec.get("forbidden_public_assertions", []) if str(item).strip()]
+    assertion_matches = [
+        assertion
+        for assertion in assertions
+        if public_assertion_is_forbidden(str(assertion), revised, doc_spec)
+    ]
+    if assertion_matches:
+        raise EngineError(
+            f"editor public revised_markdown contains forbidden spec assertion(s): {', '.join(assertion_matches)}"
+        )
     forbidden = [item for item in doc_spec.get("forbidden_public_patterns", []) if str(item).strip()]
-    matches = [pattern for pattern in forbidden if re.search(re.escape(str(pattern)), revised, re.IGNORECASE)]
-    if matches:
+    matches = [
+        pattern
+        for pattern in forbidden
+        if public_pattern_is_forbidden(str(pattern), revised)
+    ]
+    if matches and doc_spec.get("strict_public_pattern_validation", False):
         raise EngineError(f"editor public revised_markdown contains forbidden spec pattern(s): {', '.join(matches)}")
+    if matches:
+        return [f"public revised_markdown contains advisory pattern(s): {', '.join(matches)}"]
+    return []
+
+
+def public_assertion_is_forbidden(assertion: str, text: str, doc_spec: dict[str, Any]) -> bool:
+    cleaned = remove_rejected_claim_contexts(remove_allowed_disclaimers(text.lower(), doc_spec))
+    return re.search(re.escape(assertion.lower().strip()), cleaned, re.IGNORECASE) is not None
+
+
+def remove_rejected_claim_contexts(text: str) -> str:
+    cleaned_lines: list[str] = []
+    skip_next_quote = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if "not the right claim" in stripped or "wrong claim" in stripped:
+            skip_next_quote = True
+            continue
+        if skip_next_quote and (not stripped or stripped.startswith(">")):
+            continue
+        skip_next_quote = False
+        cleaned_lines.append(line)
+    return "\n".join(cleaned_lines)
+
+
+def remove_allowed_disclaimers(text: str, doc_spec: dict[str, Any]) -> str:
+    cleaned = text
+    for raw_pattern in doc_spec.get("allowed_disclaimer_patterns", []):
+        pattern = str(raw_pattern).strip().lower()
+        if not pattern:
+            continue
+        cleaned = cleaned.replace(pattern, "")
+    return cleaned
+
+
+def public_pattern_is_forbidden(pattern: str, text: str) -> bool:
+    lower_pattern = pattern.lower().strip()
+    lower_text = text.lower()
+    if not lower_pattern:
+        return False
+    unsafe_text = remove_negated_pattern_mentions(lower_text, lower_pattern)
+    if lower_pattern == "fatwa":
+        return "fatwa" in unsafe_text
+    if lower_pattern not in unsafe_text:
+        return False
+    return re.search(re.escape(lower_pattern), unsafe_text, re.IGNORECASE) is not None
+
+
+def remove_negated_pattern_mentions(text: str, pattern: str) -> str:
+    escaped = re.escape(pattern)
+    replacements = [
+        rf"\bnot\s+(?:an?\s+)?{escaped}\b",
+        rf"\bdoes\s+not\s+(?:assert|claim|state|mean|say|imply)\s+(?:that\s+[^.\n]{{0,120}})?{escaped}\b",
+        rf"\bdo\s+not\s+(?:assert|claim|state|say|imply|describe)\s+(?:[^.\n]{{0,120}})?{escaped}\b",
+        rf"\bwithout\s+(?:a\s+)?{escaped}\b",
+    ]
+    cleaned = text
+    for expression in replacements:
+        cleaned = re.sub(expression, "", cleaned, flags=re.IGNORECASE)
+    return cleaned
 
 
 def build_doc_context(
@@ -383,6 +462,15 @@ def render_changelog(cycle_number: int, editor_artifact: dict[str, Any]) -> str:
     lines.extend(["", "## Changes"])
     lines.extend([f"- {item}" for item in editor_artifact.get("changelog", [])] or ["- None"])
     return "\n".join(lines) + "\n"
+
+
+def render_internal_notes(raw_notes: str, validation_warnings: list[str]) -> str:
+    notes = raw_notes.rstrip()
+    if not validation_warnings:
+        return notes + "\n"
+    lines = [notes, "", "## Validation Warnings"]
+    lines.extend([f"- {warning}" for warning in validation_warnings])
+    return "\n".join(lines).rstrip() + "\n"
 
 
 if __name__ == "__main__":

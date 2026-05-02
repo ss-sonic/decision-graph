@@ -1,0 +1,101 @@
+document_type: sharia_review_pack
+author: Blinq
+audience: Qualified Sharia scholar, Islamic finance advisor, and internal Blinq review team
+goal: Improve a single reviewer-facing Sharia review pack for a pre-deployment Blinq v1 product by making the memo, scope, controls, implementation evidence, policies, and reviewer questions more precise, conservative, and reviewable
+tone: careful, rigorous, non-promotional, non-theological-overclaiming, implementation-aware, reviewer-facing
+risk_posture: highest_caution
+private_evidence_policy: use_for_confidence_do_not_quote
+diligence_language: inline_for_review_scope_and_controls_internal_notes_for_private_proof_gaps
+strict_public_pattern_validation: false
+public_document_rules:
+  - Treat the document as a single Sharia review pack, not a public marketing memo.
+  - Preserve the main memo plus Appendix A through Appendix H structure unless a clearer reviewer-facing structure is explicitly justified.
+  - Preserve the candidate-design posture. The document must ask for qualified review; it must not announce a religious, legal, deployment, audit, or compliance conclusion.
+  - Keep the reviewed product pre-deployment, simple binary markets only, USDC only, fully collateralized, curated, objectively resolvable, and non-levered.
+  - Keep yield, lending, treasury use, rehypothecation, margin, borrowing, liquidations, permissionless market creation, sports, casino-style markets, private-person harm, death, violence, war, gossip, and short-duration dopamine-loop markets out of reviewed v1.
+  - Keep LP incentives, maker rebates, referral rewards, liquidity mining, volume rewards, and promotional rewards out of reviewed v1 unless a future scholar-reviewed version is explicitly created.
+  - Preserve the chosen governance and control defaults unless tightening them improves reviewability.
+  - Do not include local repository paths, private URLs, deployment addresses, chain-specific reference addresses, or raw private evidence in the public revised document.
+  - Treat contract repositories, diagrams, beta materials, audits, and implementation artifacts as private attachments referenced by category only.
+  - Summarize only ctf-exchange and UMA-style oracle adapter implementation evidence for the reviewed v1. Do not include negative-risk or multi-outcome mechanics in the reviewed product.
+  - Prefer conservative wording over persuasive wording when the two conflict.
+  - Move implementation proof gaps, reviewer caveats, and private evidence reminders into internal notes unless the public document needs them to define review scope.
+  - Do not add new external factual claims unless the researcher found exact supporting evidence.
+  - If the loop cannot improve truth, evidence, scope clarity, or reviewer usability, the judge should mark the document stable or blocked on primary review rather than make style-only edits.
+preferred_public_phrasing:
+  - pre-deployment reviewed v1
+  - candidate design for qualified Sharia review
+  - reviewed product scope
+  - private implementation-reference materials
+  - reviewer should determine
+  - subject to qualified Sharia review of actual implementation
+  - service fee for exchange operation, capped by reviewed policy
+  - protective emergency pause
+  - critical governance action
+  - out of scope for this first review
+must_preserve_constraints:
+  - max target trading fee of 100 bps
+  - reviewed fee cap of 300 bps
+  - critical non-emergency governance timelock of at least 48h
+  - instant protective emergency pause may use 3-of-5 approval but is capped at 72h without critical ratification
+  - critical governance should require at least 15 signers and a 2/3 threshold
+  - manual resolution requires evidence, public source basis, critical governance, and 24h notice or challenge where feasible
+  - per-user per-market cap lower of 1 percent open interest or 1,000 USDC equivalent
+  - daily new exposure cap of 5,000 USDC equivalent
+  - first-use and post-limit cooling-off of 24h where feasible
+appendices_that_must_remain:
+  - Appendix A: Product Scope and Reviewed v1 Constraints
+  - Appendix B: Controls Matrix
+  - Appendix C: Contract Implementation Evidence Summary
+  - Appendix D: Market Admissibility Policy
+  - Appendix E: Responsible Access and UI Policy
+  - Appendix F: Collateral, Treasury, and Fee Policy
+  - Appendix G: Oracle, Emergency Pause, and Manual Resolution Policy
+  - Appendix H: Reviewer Questions and Review Ask
+forbidden_public_assertions:
+  - Blinq is Sharia-compliant
+  - Blinq is halal
+  - This is a fatwa
+  - This document is a fatwa
+  - Sharia approves Blinq
+  - Islamic law permits Blinq
+  - Blinq is scholar-approved
+  - Blinq is automatically compliant
+  - all prediction markets are halal
+  - prediction markets are halal
+  - the reviewed product is deployed
+  - Blinq reviewed v1 is deployed
+  - the reviewed product is audited
+  - Blinq reviewed v1 is production-ready
+  - users can earn yield on collateral
+  - maker rebates are in scope
+  - referral rewards are in scope
+  - liquidity mining is in scope
+  - sports markets are in scope
+  - casino-style markets are in scope
+  - permissionless market creation is in scope
+allowed_disclaimer_patterns:
+  - This document is a design proposal for qualified Sharia review.
+  - This document is not a religious ruling, legal opinion, or final compliance claim.
+  - A qualified Sharia review process is required before any compliance claim is made publicly.
+  - The reviewed version is pre-deployment.
+  - no live contract locations should be included in this review pack.
+forbidden_public_patterns:
+  - /Users/
+  - deployment address
+  - Polygon
+  - Amoy
+  - neg-risk
+  - negative-risk
+  - maker rebate
+  - referral reward
+  - liquidity mining
+  - production-ready
+  - audited for reviewed product
+internal_notes_should_include:
+  - any exact implementation evidence still needed before launch
+  - any claim that depends on private contract review rather than public evidence
+  - any scholar-facing question that cannot be resolved by desk research
+  - any category that should require separate scholar review
+  - any control default that may need a stricter threshold for reviewer comfort
+  - any tension between information-market framing and maysir, qimar, gharar, binary payoff, or speculative-user concerns

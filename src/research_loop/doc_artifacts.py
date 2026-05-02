@@ -183,7 +183,13 @@ def skeptic_schema() -> dict[str, Any]:
 
 def editor_schema() -> dict[str, Any]:
     return strict_object(
-        required=["summary", "revised_markdown", "internal_notes_markdown", "changelog", "applied_proposal_ids"],
+        required=[
+            "summary",
+            "revised_markdown",
+            "internal_notes_markdown",
+            "changelog",
+            "applied_proposal_ids",
+        ],
         properties={
             "summary": {"type": "string"},
             "revised_markdown": {"type": "string"},

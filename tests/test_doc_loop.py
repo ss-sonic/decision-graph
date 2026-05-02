@@ -9,6 +9,8 @@ import tempfile
 import unittest
 
 from research_loop.doc_artifacts import validate_editor_against_skeptic
+from research_loop.doc_cli import validate_editor_against_doc_spec
+from research_loop.doc_spec import load_doc_spec
 from research_loop.doc_state import doc_slug, initialize_doc_state, next_doc_cycle_dir
 from research_loop.engines.base import EngineError
 
@@ -136,11 +138,63 @@ class DocLoopTests(unittest.TestCase):
             self.assertEqual(doc_slug(root, doc), "docs-my-doc")
             self.assertEqual(next_doc_cycle_dir(root, doc, state).name, "cycle-0001")
 
+    def test_doc_spec_coerces_string_booleans(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "docspec.yaml"
+            path.write_text(
+                "document_type: test\n"
+                "author: author\n"
+                "audience: audience\n"
+                "goal: goal\n"
+                "tone: tone\n"
+                "risk_posture: posture\n"
+                "strict_public_pattern_validation: 'false'\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(load_doc_spec(path)["strict_public_pattern_validation"])
+
     def test_editor_rejects_unapproved_proposal_ids(self) -> None:
         editor = {"applied_proposal_ids": ["edit-2"]}
         skeptic = {"approved_proposal_ids": ["edit-1"]}
         with self.assertRaises(EngineError):
             validate_editor_against_skeptic(editor, skeptic)
+
+    def test_doc_spec_allows_negated_fatwa_disclaimer(self) -> None:
+        spec = {
+            "forbidden_public_assertions": ["Blinq is Sharia-compliant", "This is a fatwa"],
+            "forbidden_public_patterns": ["automatically compliant"],
+            "strict_public_pattern_validation": False,
+            "allowed_disclaimer_patterns": [
+                "This proposal does not assert that Blinq is Sharia-compliant.",
+                "This is not a fatwa, legal opinion, or final compliance claim.",
+            ],
+        }
+        validate_editor_against_doc_spec(
+            {
+                "revised_markdown": (
+                    "This is not a fatwa, legal opinion, or final compliance claim. "
+                    "This proposal does not assert that Blinq is Sharia-compliant."
+                    "\n\n## Why \"All Prediction Markets Are Halal\" Is Not the Right Claim\n\n"
+                    "> All prediction markets are Sharia-compliant.\n"
+                )
+            },
+            spec,
+        )
+        warnings = validate_editor_against_doc_spec(
+            {"revised_markdown": "This could become automatically compliant after review."},
+            spec,
+        )
+        self.assertEqual(len(warnings), 1)
+        with self.assertRaises(EngineError):
+            validate_editor_against_doc_spec(
+                {"revised_markdown": "This is a fatwa."},
+                spec,
+            )
+        with self.assertRaises(EngineError):
+            validate_editor_against_doc_spec(
+                {"revised_markdown": "Blinq is Sharia-compliant."},
+                spec,
+            )
 
     def test_run_status_latest_with_mock_engines(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

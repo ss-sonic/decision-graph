@@ -20,6 +20,9 @@ DEFAULT_DOC_SPEC: dict[str, Any] = {
     "private_evidence_policy": "use_for_confidence_do_not_quote",
     "diligence_language": "inline_when_needed",
     "forbidden_public_patterns": [],
+    "forbidden_public_assertions": [],
+    "allowed_disclaimer_patterns": [],
+    "strict_public_pattern_validation": False,
 }
 
 
@@ -37,6 +40,10 @@ def load_doc_spec(path: Path | None) -> dict[str, Any]:
         raise ValueError(f"Document spec must contain a mapping: {path}")
     spec = dict(DEFAULT_DOC_SPEC)
     spec.update(raw)
+    spec["strict_public_pattern_validation"] = coerce_bool(
+        spec.get("strict_public_pattern_validation"),
+        "strict_public_pattern_validation",
+    )
     _validate_doc_spec(spec, path)
     return spec
 
@@ -60,12 +67,34 @@ def parse_simple_yaml(text: str) -> dict[str, Any]:
         key = key.strip()
         value = value.strip()
         if value:
-            result[key] = value.strip("\"'")
+            result[key] = parse_scalar(value)
             current_list_key = None
         else:
             result[key] = []
             current_list_key = key
     return result
+
+
+def parse_scalar(value: str) -> Any:
+    stripped = value.strip().strip("\"'")
+    lowered = stripped.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    return stripped
+
+
+def coerce_bool(value: Any, key: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered == "true":
+            return True
+        if lowered == "false":
+            return False
+    raise ValueError(f"Document spec `{key}` must be a boolean")
 
 
 def _validate_doc_spec(spec: dict[str, Any], path: Path) -> None:
@@ -75,4 +104,11 @@ def _validate_doc_spec(spec: dict[str, Any], path: Path) -> None:
     patterns = spec.get("forbidden_public_patterns", [])
     if not isinstance(patterns, list) or not all(isinstance(item, str) for item in patterns):
         raise ValueError("Document spec `forbidden_public_patterns` must be a list of strings")
-
+    assertions = spec.get("forbidden_public_assertions", [])
+    if not isinstance(assertions, list) or not all(isinstance(item, str) for item in assertions):
+        raise ValueError("Document spec `forbidden_public_assertions` must be a list of strings")
+    disclaimers = spec.get("allowed_disclaimer_patterns", [])
+    if not isinstance(disclaimers, list) or not all(isinstance(item, str) for item in disclaimers):
+        raise ValueError("Document spec `allowed_disclaimer_patterns` must be a list of strings")
+    if not isinstance(spec.get("strict_public_pattern_validation", False), bool):
+        raise ValueError("Document spec `strict_public_pattern_validation` must be a boolean")

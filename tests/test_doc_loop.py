@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -8,15 +9,36 @@ import sys
 import tempfile
 import unittest
 
-from research_loop.doc_artifacts import validate_editor_against_skeptic
-from research_loop.doc_cli import validate_editor_against_doc_spec
+from research_loop.doc_artifacts import validate_doc_artifact, validate_editor_against_skeptic
+from research_loop.doc_cli import (
+    build_research_config,
+    build_research_plan,
+    merge_research_artifacts,
+    validate_editor_against_doc_spec,
+)
 from research_loop.doc_spec import load_doc_spec
 from research_loop.doc_state import doc_slug, initialize_doc_state, next_doc_cycle_dir
-from research_loop.engines.base import EngineError
+from research_loop.engines.base import EngineError, PreflightResult
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "bin" / "doc-loop"
+
+
+class FakeAdapter:
+    def __init__(self, engine: str, search_available: bool) -> None:
+        self.engine = engine
+        self.search_available = search_available
+
+    def preflight(self) -> PreflightResult:
+        return PreflightResult(
+            engine=self.engine,
+            available=True,
+            auth_configured=True,
+            search_available=self.search_available,
+            search_mode="test",
+            details=[],
+        )
 
 
 def copy_file(src: Path, dst: Path) -> None:
@@ -127,6 +149,84 @@ def scenario() -> dict[str, object]:
     }
 
 
+def planned_scenario() -> dict[str, object]:
+    payload = scenario()
+    payload["claude"]["extractor"]["research_units"] = [
+        {
+            "id": "unit-1",
+            "kind": "evidence_gap",
+            "claim_ids": ["claim-1"],
+            "target_heading": "Sample",
+            "question": "What evidence supports costly decision errors?",
+            "importance": "critical",
+            "research_hint": "Find credible research.",
+            "success_criteria": "Find a source that supports or weakens claim-1.",
+        },
+        {
+            "id": "unit-2",
+            "kind": "section_risk",
+            "claim_ids": ["claim-1"],
+            "target_heading": "Sample",
+            "question": "What wording would overclaim the evidence?",
+            "importance": "medium",
+            "research_hint": "Check for caveats.",
+            "success_criteria": "Find caveats relevant to claim-1.",
+        },
+    ]
+    payload["claude"]["researcher-0001"] = {
+        "summary": "Claude researched the critical evidence gap.",
+        "researched_gap_ids": ["unit-1"],
+        "evidence_items": [
+            {
+                "id": "ev-claude-1",
+                "source": "Example Research",
+                "locator": "https://example.com/research",
+                "source_type": "research",
+                "claim_ids": ["claim-1"],
+                "supports_or_weakens": "supports",
+                "finding": "Decision errors can create material rework.",
+                "confidence": 0.7,
+            }
+        ],
+        "unresolved_gaps": [],
+    }
+    payload["codex"]["researcher-0002"] = {
+        "summary": "Codex confirmed the same critical evidence gap.",
+        "researched_gap_ids": ["unit-1"],
+        "evidence_items": [
+            {
+                "id": "ev-codex-1",
+                "source": "Example Research",
+                "locator": "https://example.com/research",
+                "source_type": "research",
+                "claim_ids": ["claim-1"],
+                "supports_or_weakens": "supports",
+                "finding": "Decision errors can create material rework.",
+                "confidence": 0.8,
+            }
+        ],
+        "unresolved_gaps": [],
+    }
+    payload["claude"]["researcher-0003"] = {
+        "summary": "Claude researched the section risk.",
+        "researched_gap_ids": ["unit-2"],
+        "evidence_items": [
+            {
+                "id": "ev-claude-2",
+                "source": "Caveat Source",
+                "locator": "https://example.com/caveat",
+                "source_type": "analysis",
+                "claim_ids": ["claim-1"],
+                "supports_or_weakens": "weakens",
+                "finding": "The claim should avoid overgeneralizing decision costs.",
+                "confidence": 0.65,
+            }
+        ],
+        "unresolved_gaps": [],
+    }
+    return payload
+
+
 class DocLoopTests(unittest.TestCase):
     def test_doc_slug_and_cycle_dir(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -158,6 +258,75 @@ class DocLoopTests(unittest.TestCase):
         skeptic = {"approved_proposal_ids": ["edit-1"]}
         with self.assertRaises(EngineError):
             validate_editor_against_skeptic(editor, skeptic)
+
+    def test_extractor_accepts_research_units(self) -> None:
+        artifact = scenario()["claude"]["extractor"]
+        artifact["research_units"] = [
+            {
+                "id": "unit-1",
+                "kind": "evidence_gap",
+                "claim_ids": ["claim-1"],
+                "target_heading": "Sample",
+                "question": "What evidence supports the claim?",
+                "importance": "critical",
+                "research_hint": "Find primary research.",
+                "success_criteria": "Return evidence that supports or weakens claim-1.",
+            }
+        ]
+        validate_doc_artifact("extractor", artifact)
+
+    def test_research_plan_duplicates_critical_units_across_engines(self) -> None:
+        extractor = planned_scenario()["claude"]["extractor"]
+        plan = build_research_plan(
+            extractor,
+            usable_engines=["claude", "codex"],
+            budget="standard",
+            max_units=8,
+            max_workers=4,
+        )
+        assignments_by_unit = {}
+        for assignment in plan["assignments"]:
+            assignments_by_unit.setdefault(assignment["work_unit"]["id"], []).append(assignment["engine"])
+        self.assertEqual(assignments_by_unit["unit-1"], ["claude", "codex"])
+        self.assertEqual(assignments_by_unit["unit-2"], ["claude"])
+
+    def test_research_merge_dedupes_sources_and_preserves_claims(self) -> None:
+        worker_results = [
+            {
+                "worker_id": "researcher-0001",
+                "engine": "claude",
+                "work_unit_id": "unit-1",
+                "artifact": planned_scenario()["claude"]["researcher-0001"],
+            },
+            {
+                "worker_id": "researcher-0002",
+                "engine": "codex",
+                "work_unit_id": "unit-1",
+                "artifact": planned_scenario()["codex"]["researcher-0002"],
+            },
+        ]
+        merged, metadata = merge_research_artifacts(worker_results, failed_workers=[])
+        self.assertEqual(len(merged["evidence_items"]), 1)
+        self.assertEqual(merged["evidence_items"][0]["claim_ids"], ["claim-1"])
+        self.assertEqual(metadata["evidence_groups"][0]["confirmation_status"], "multi_engine_confirmed")
+        self.assertEqual(metadata["evidence_groups"][0]["engines"], ["claude", "codex"])
+
+    def test_research_config_excludes_engines_without_search(self) -> None:
+        args = argparse.Namespace(
+            research_mode="planned",
+            research_engines="claude,codex",
+            research_budget="standard",
+            research_workers=None,
+            research_max_units=None,
+        )
+        config = build_research_config(
+            args,
+            {
+                "claude": FakeAdapter("claude", True),
+                "codex": FakeAdapter("codex", False),
+            },
+        )
+        self.assertEqual(config["engines"], ["claude"])
 
     def test_doc_spec_allows_negated_fatwa_disclaimer(self) -> None:
         spec = {
@@ -248,6 +417,8 @@ class DocLoopTests(unittest.TestCase):
                     "supporting.md",
                     "--spec",
                     "sample.docspec.yaml",
+                    "--research-mode",
+                    "sequential",
                     "--cycles",
                     "1",
                 ],
@@ -295,6 +466,135 @@ class DocLoopTests(unittest.TestCase):
             self.assertIn("Document Intent Spec", editor_prompt)
             self.assertIn("partner_proposal", editor_prompt)
             self.assertIn("internal notes", editor_prompt.lower())
+
+    def test_planned_research_with_mock_engines_creates_worker_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            sample = root / "sample.md"
+            sample.write_text("# Sample\n\nDecision quality matters.\n", encoding="utf-8")
+            copy_doc_prompts(root)
+
+            scenario_path = root / "mock-scenario.json"
+            scenario_path.write_text(json.dumps(planned_scenario()), encoding="utf-8")
+
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(ROOT / "src")
+            env["RESEARCH_LOOP_MOCK_ENGINES"] = "1"
+            env["RESEARCH_LOOP_MOCK_FILE"] = str(scenario_path)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "run",
+                    "--doc",
+                    "sample.md",
+                    "--research-engines",
+                    "claude,codex",
+                    "--research-budget",
+                    "standard",
+                    "--research-workers",
+                    "3",
+                    "--cycles",
+                    "1",
+                ],
+                cwd=root,
+                env=env,
+                check=True,
+            )
+
+            cycle_dir = root / "doc-runs" / "sample" / "cycle-0001"
+            self.assertTrue((cycle_dir / "research-plan.json").exists())
+            self.assertTrue((cycle_dir / "research-merge.json").exists())
+            self.assertTrue((cycle_dir / "researcher-0001" / "engine.json").exists())
+            self.assertTrue((cycle_dir / "researcher-0002" / "engine.json").exists())
+            self.assertTrue((cycle_dir / "researcher" / "normalized.json").exists())
+            merged = json.loads((cycle_dir / "researcher" / "normalized.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(merged["evidence_items"]), 2)
+            merge = json.loads((cycle_dir / "research-merge.json").read_text(encoding="utf-8"))
+            statuses = {group["confirmation_status"] for group in merge["evidence_groups"]}
+            self.assertIn("multi_engine_confirmed", statuses)
+
+    def test_planned_research_continues_when_one_worker_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            sample = root / "sample.md"
+            sample.write_text("# Sample\n\nDecision quality matters.\n", encoding="utf-8")
+            copy_doc_prompts(root)
+
+            payload = planned_scenario()
+            payload["codex"]["researcher-0002"] = {"__error__": "simulated codex failure"}
+            scenario_path = root / "mock-scenario.json"
+            scenario_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(ROOT / "src")
+            env["RESEARCH_LOOP_MOCK_ENGINES"] = "1"
+            env["RESEARCH_LOOP_MOCK_FILE"] = str(scenario_path)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "run",
+                    "--doc",
+                    "sample.md",
+                    "--research-engines",
+                    "claude,codex",
+                    "--research-budget",
+                    "standard",
+                    "--cycles",
+                    "1",
+                ],
+                cwd=root,
+                env=env,
+                check=True,
+            )
+
+            merge = json.loads(
+                (root / "doc-runs" / "sample" / "cycle-0001" / "research-merge.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(merge["failed_workers"][0]["worker_id"], "researcher-0002")
+            self.assertTrue((root / "doc-runs" / "sample" / "cycle-0001" / "revised.md").exists())
+
+    def test_sequential_research_mode_preserves_current_researcher_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            sample = root / "sample.md"
+            sample.write_text("# Sample\n\nDecision quality matters.\n", encoding="utf-8")
+            copy_doc_prompts(root)
+
+            scenario_path = root / "mock-scenario.json"
+            scenario_path.write_text(json.dumps(scenario()), encoding="utf-8")
+
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(ROOT / "src")
+            env["RESEARCH_LOOP_MOCK_ENGINES"] = "1"
+            env["RESEARCH_LOOP_MOCK_FILE"] = str(scenario_path)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "run",
+                    "--doc",
+                    "sample.md",
+                    "--research-mode",
+                    "sequential",
+                    "--cycles",
+                    "1",
+                ],
+                cwd=root,
+                env=env,
+                check=True,
+            )
+
+            cycle_dir = root / "doc-runs" / "sample" / "cycle-0001"
+            self.assertTrue((cycle_dir / "researcher" / "normalized.json").exists())
+            self.assertFalse((cycle_dir / "research-plan.json").exists())
+            self.assertFalse((cycle_dir / "researcher-0001").exists())
 
 
 if __name__ == "__main__":

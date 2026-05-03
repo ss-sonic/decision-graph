@@ -18,7 +18,8 @@ class CodexAdapter(EngineAdapter):
         base = super().preflight()
         mode = os.getenv("RESEARCH_LOOP_CODEX_SEARCH_MODE", "off").strip().lower()
         details = [
-            "Codex search is optional in this loop and not required for skeptic/judge roles."
+            "Codex search is optional in this loop and not required for skeptic/judge roles.",
+            "When enabled, Codex CLI uses its built-in web_search tool; no --search CLI flag is passed.",
         ]
         return PreflightResult(
             engine=base.engine,
@@ -52,8 +53,6 @@ class CodexAdapter(EngineAdapter):
             str(output_path),
             prompt_text,
         ]
-        if search_required:
-            command.insert(2, "--search")
         stderr_path = output_dir / "stderr.txt"
         heartbeat_seconds = int(os.getenv("RESEARCH_LOOP_HEARTBEAT_SECS", "5"))
         timeout_seconds = engine_timeout_seconds()

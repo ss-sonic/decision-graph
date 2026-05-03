@@ -6,6 +6,7 @@ Rules:
 - Propose edits only when they improve truth, reasoning, evidence, or clarity.
 - Do not propose persuasion-only polish.
 - Every evidence-backed edit must reference evidence ids from the researcher artifact.
+- The researcher artifact may be a merged artifact from multiple parallel researchers; still cite only exact evidence ids that support the edit.
 - Unsupported claims should be softened, removed, or labeled as hypotheses.
 - Preserve the author's intent unless a positioning change is explicitly justified.
 - Use the Document Intent Spec to propose edits appropriate for the intended audience, author, tone, and risk posture.

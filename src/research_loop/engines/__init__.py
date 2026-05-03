@@ -35,7 +35,14 @@ class MockAdapter(EngineAdapter):
         search_required: bool,
     ) -> Path:
         output_path = output_dir / "raw.json"
-        payload = self._scenario[self.engine_name][role]
+        engine_scenario = self._scenario[self.engine_name]
+        payload = engine_scenario.get(role)
+        if payload is None and role.startswith("researcher-"):
+            payload = engine_scenario.get("researcher")
+        if payload is None:
+            raise EngineError(f"Mock scenario missing payload for {self.engine_name}.{role}")
+        if isinstance(payload, dict) and "__error__" in payload:
+            raise EngineError(str(payload["__error__"]))
         output_path.write_text(json.dumps(payload), encoding="utf-8")
         return output_path
 
@@ -54,4 +61,3 @@ def build_registry() -> dict[str, EngineAdapter]:
         "claude": ClaudeAdapter(),
         "codex": CodexAdapter(),
     }
-

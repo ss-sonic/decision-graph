@@ -28,6 +28,8 @@ def source_schema() -> dict[str, Any]:
 
 
 def doc_artifact_schema(role: str) -> dict[str, Any]:
+    if role.startswith("researcher-"):
+        role = "researcher"
     schemas = {
         "extractor": extractor_schema(),
         "researcher": researcher_schema(),
@@ -82,8 +84,37 @@ def extractor_schema() -> dict[str, Any]:
                     },
                 ),
             },
+            "research_units": {
+                "type": "array",
+                "items": research_unit_schema(),
+            },
             "structure_problems": string_array_schema(),
             "summary": {"type": "string"},
+        },
+    )
+
+
+def research_unit_schema() -> dict[str, Any]:
+    return strict_object(
+        required=[
+            "id",
+            "kind",
+            "claim_ids",
+            "target_heading",
+            "question",
+            "importance",
+            "research_hint",
+            "success_criteria",
+        ],
+        properties={
+            "id": {"type": "string"},
+            "kind": {"type": "string"},
+            "claim_ids": string_array_schema(),
+            "target_heading": {"type": "string"},
+            "question": {"type": "string"},
+            "importance": {"type": "string"},
+            "research_hint": {"type": "string"},
+            "success_criteria": {"type": "string"},
         },
     )
 
@@ -232,6 +263,8 @@ def strict_object(required: list[str], properties: dict[str, Any]) -> dict[str, 
 
 
 def validate_doc_artifact(role: str, payload: dict[str, Any]) -> None:
+    if role.startswith("researcher-"):
+        role = "researcher"
     if role not in DOC_ROLES:
         raise EngineError(f"Unsupported doc role: {role}")
     if not isinstance(payload, dict):
@@ -243,6 +276,8 @@ def validate_doc_artifact(role: str, payload: dict[str, Any]) -> None:
 
     if role == "researcher":
         _validate_researcher(payload)
+    if role == "extractor":
+        _validate_extractor(payload)
     if role == "editor":
         _validate_editor_shape(payload)
 
@@ -268,6 +303,23 @@ def _validate_researcher(payload: dict[str, Any]) -> None:
             raise EngineError("researcher evidence_items entries must be objects")
         if not item.get("locator") or not item.get("source"):
             raise EngineError("researcher evidence_items require source and locator")
+
+
+def _validate_extractor(payload: dict[str, Any]) -> None:
+    units = payload.get("research_units", [])
+    if units is None:
+        return
+    if not isinstance(units, list):
+        raise EngineError("extractor research_units must be a list")
+    required = set(research_unit_schema()["required"])
+    for item in units:
+        if not isinstance(item, dict):
+            raise EngineError("extractor research_units entries must be objects")
+        missing = sorted(required.difference(item))
+        if missing:
+            raise EngineError(f"extractor research_units entry missing required keys: {', '.join(missing)}")
+        if not isinstance(item.get("claim_ids"), list):
+            raise EngineError("extractor research_units claim_ids must be a list")
 
 
 def _validate_editor_shape(payload: dict[str, Any]) -> None:

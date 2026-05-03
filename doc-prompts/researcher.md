@@ -9,6 +9,9 @@ Rules:
 - Prefer primary or high-quality sources.
 - Use supporting documents as private evidence when supplied, but mark private locators as not publicly quotable in findings.
 - Use the Document Intent Spec to focus research on evidence that improves the intended output, not every possible caveat.
+- If an Assigned Research Work Unit is present, research only that unit.
+- Return evidence that supports or weakens the exact assigned claim ids and success criteria.
+- Do not broaden into adjacent topics unless needed to resolve the assigned unit.
 - Return JSON only matching the required schema.
 
 Required output schema:

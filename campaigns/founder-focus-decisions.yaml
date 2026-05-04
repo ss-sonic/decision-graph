@@ -1,0 +1,121 @@
+{
+  "idea": {
+    "name": "Decision Graph",
+    "description": "AI-native decision infrastructure for structured, updateable decision-making over time."
+  },
+  "wedge": {
+    "slug": "founder-focus-decisions",
+    "name": "Founder focus and pivot decisions",
+    "description": "A narrow founder workflow for recurring strategic focus, pivot, customer-segment, runway, fundraising, and product-direction decisions where assumptions change and prior reasoning matters."
+  },
+  "idea_source": "doc-runs/decision-graph/cycle-0003/revised.md",
+  "notes_sources": [
+    "reports/client-discovery/current-brief.md",
+    "reports/client-discovery/objections.md",
+    "reports/client-discovery/pilot.md"
+  ],
+  "evidence_policy": {
+    "mode": "desk_research_plus_your_notes",
+    "founder_notes_can_validate_claims": false,
+    "prior_failed_wedges_should_inform_kill_criteria": true
+  },
+  "required_artifacts": [
+    "researcher",
+    "skeptic",
+    "rebuttal",
+    "judge"
+  ],
+  "engine_roles": {
+    "researcher": "claude",
+    "skeptic": "codex",
+    "rebuttal": "claude",
+    "judge": "codex"
+  },
+  "core_claims": [
+    {
+      "id": "founders_have_urgent_repeated_focus_decisions",
+      "priority": 1,
+      "must_prove": true,
+      "statement": "Early-stage founders repeatedly face urgent, high-stakes focus and pivot decisions involving customer segment, product direction, fundraising timing, runway allocation, hiring, pricing, and go-to-market tradeoffs."
+    },
+    {
+      "id": "workflow_is_context_heavy_and_updateable",
+      "priority": 2,
+      "must_prove": true,
+      "statement": "Founder focus decisions are context-heavy and updateable over time: assumptions, evidence, investor feedback, customer signals, runway, team constraints, and market conditions change in ways that make prior reasoning worth preserving."
+    },
+    {
+      "id": "continuity_beats_chat_docs_advisors",
+      "priority": 3,
+      "must_prove": true,
+      "statement": "For founder focus and pivot decisions, a structured decision graph can plausibly create more value than one-off ChatGPT sessions, Notion docs, investor calls, advisor conversations, or ad-hoc memos by preserving assumptions, tradeoffs, evidence, review triggers, and update diffs."
+    },
+    {
+      "id": "buyer_user_same_and_accessible",
+      "priority": 4,
+      "must_prove": true,
+      "statement": "The founder is both user and buyer, making a small pilot more accessible than enterprise HR or compliance-heavy workflows."
+    },
+    {
+      "id": "product_can_be_narrow",
+      "priority": 5,
+      "must_prove": true,
+      "statement": "The product can be narrowed to a concrete founder workflow such as weekly focus review, pivot memo, investor-feedback synthesis, or runway tradeoff review rather than becoming a generic decision operating system."
+    },
+    {
+      "id": "switching_pressure_exists",
+      "priority": 6,
+      "must_prove": true,
+      "statement": "Founders experience enough dissatisfaction with current workarounds to try a dedicated decision-continuity workflow despite already using ChatGPT, Notion, advisors, spreadsheets, and investor updates."
+    },
+    {
+      "id": "investor_story_has_substance",
+      "priority": 7,
+      "must_prove": false,
+      "statement": "If founder focus decisions work as a wedge, the product can expand into broader founder operating cadence, board/investor decision records, team strategy decisions, and eventually decision infrastructure for high-context work."
+    }
+  ],
+  "kill_criteria": [
+    {
+      "id": "chat_docs_advisors_are_good_enough",
+      "priority": 1,
+      "statement": "Founders already solve the problem well enough with ChatGPT, Notion, memos, spreadsheets, investor updates, advisor calls, and cofounder conversations."
+    },
+    {
+      "id": "pain_is_not_software_addressable",
+      "priority": 2,
+      "statement": "The hardest founder decisions are dominated by taste, courage, market uncertainty, politics, or emotional conviction rather than a software-addressable continuity or reasoning-reconstruction problem."
+    },
+    {
+      "id": "workflow_too_bespoke_or_infrequent",
+      "priority": 3,
+      "statement": "Meaningful founder focus or pivot decisions are too bespoke, irregular, or company-specific to support repeat usage or a standardized pilot."
+    },
+    {
+      "id": "dedicated_tool_adds_friction",
+      "priority": 4,
+      "statement": "A structured decision graph adds documentation burden and founder overhead instead of reducing context reconstruction or improving decision cadence."
+    },
+    {
+      "id": "trust_or_confidentiality_blocks_usage",
+      "priority": 5,
+      "statement": "Founders will not put sensitive strategy, runway, investor feedback, cofounder issues, or customer evidence into a dedicated AI decision tool."
+    },
+    {
+      "id": "wedge_collapses_into_memo_generator",
+      "priority": 6,
+      "statement": "The strongest use case is just generating strategy memos or investor updates, not preserving an active decision object that users return to and update."
+    },
+    {
+      "id": "no_clear_willingness_to_pay",
+      "priority": 7,
+      "statement": "Founders may acknowledge the pain but lack willingness to pay or sustained usage because the problem feels important but not urgent enough for another tool."
+    }
+  ],
+  "verdict_rules": {
+    "rejection_confidence_threshold": 0.7,
+    "plausible_confidence_threshold": 0.7,
+    "stalled_after_consecutive_no_evidence_cycles": 3,
+    "plausible_requires_pilot_fields": true
+  }
+}

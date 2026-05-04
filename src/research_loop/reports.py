@@ -108,6 +108,11 @@ def _write_objections(path: Path, campaign: Campaign, state: dict[str, Any], art
 
 def _write_pilot(path: Path, campaign: Campaign, state: dict[str, Any], artifact: dict[str, Any]) -> Path:
     pilot = artifact.get("pilot_recommendation", {})
+
+    def pilot_value(key: str) -> str:
+        value = pilot.get(key)
+        return str(value) if value else "Not yet specified."
+
     path.write_text(
         "\n".join(
             [
@@ -116,16 +121,16 @@ def _write_pilot(path: Path, campaign: Campaign, state: dict[str, Any], artifact
                 f"- Verdict gate: `{state['verdict']}`",
                 "",
                 "## Target User",
-                pilot.get("target_user", "Not yet specified."),
+                pilot_value("target_user"),
                 "",
                 "## Pain Statement",
-                pilot.get("pain_statement", "Not yet specified."),
+                pilot_value("pain_statement"),
                 "",
                 "## Current Workaround",
-                pilot.get("current_workaround", "Not yet specified."),
+                pilot_value("current_workaround"),
                 "",
                 "## Why Existing Tools Fail",
-                pilot.get("why_existing_tools_fail", "Not yet specified."),
+                pilot_value("why_existing_tools_fail"),
                 "",
             ]
         )

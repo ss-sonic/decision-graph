@@ -46,10 +46,10 @@ def base_artifact(summary: str, **extra: object) -> dict[str, object]:
         "kill_criterion_source_counts": {},
         "resolved_contradictions": [],
         "pilot_recommendation": {
-            "target_user": None,
-            "pain_statement": None,
-            "current_workaround": None,
-            "why_existing_tools_fail": None,
+            "target_user": "Not yet specified.",
+            "pain_statement": "Not yet specified.",
+            "current_workaround": "Not yet specified.",
+            "why_existing_tools_fail": "Not yet specified.",
         },
     }
     payload.update(extra)
@@ -57,6 +57,107 @@ def base_artifact(summary: str, **extra: object) -> dict[str, object]:
 
 
 class CliSmokeTests(unittest.TestCase):
+    def test_planned_research_run_creates_worker_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            copy_file(ROOT / "decision-graph.md", root / "decision-graph.md")
+            copy_file(ROOT / "campaigns" / "client-discovery.yaml", root / "campaigns" / "client-discovery.yaml")
+            for prompt_name in ["researcher.md", "skeptic.md", "rebuttal.md", "judge.md"]:
+                copy_file(ROOT / "prompts" / prompt_name, root / "prompts" / prompt_name)
+
+            scenario = {
+                "claude": {
+                    "researcher-0001": base_artifact(
+                        "Cadence research",
+                        supports_claims=["right_client_segment_exists"],
+                        findings=[
+                            {
+                                "title": "Cadence signal",
+                                "detail": "Founders face recurring high-stakes decisions.",
+                                "claim_id": "right_client_segment_exists",
+                                "kill_criterion_id": None,
+                                "strength": "moderate",
+                            }
+                        ],
+                    ),
+                    "researcher-0003": base_artifact(
+                        "Switching research",
+                        weakens_claims=["switching_pressure_exists"],
+                        findings=[
+                            {
+                                "title": "Switching pressure weak",
+                                "detail": "Public evidence does not prove switching pressure.",
+                                "claim_id": "switching_pressure_exists",
+                                "kill_criterion_id": None,
+                                "strength": "weakening",
+                            }
+                        ],
+                    ),
+                    "rebuttal": base_artifact("Rebuttal step", supports_claims=["right_client_segment_exists"]),
+                },
+                "codex": {
+                    "researcher-0002": base_artifact(
+                        "Workaround research",
+                        weakens_claims=["existing_tools_are_good_enough"],
+                        findings=[
+                            {
+                                "title": "Workaround pressure",
+                                "detail": "Existing tools are common but fragmented.",
+                                "claim_id": None,
+                                "kill_criterion_id": "existing_tools_are_good_enough",
+                                "strength": "moderate",
+                            }
+                        ],
+                    ),
+                    "skeptic": base_artifact("Skeptic step"),
+                    "judge": base_artifact(
+                        "Judge step",
+                        supports_claims=["right_client_segment_exists"],
+                        recommended_verdict="promising",
+                    ),
+                },
+            }
+            scenario_path = root / "mock-scenario.json"
+            scenario_path.write_text(json.dumps(scenario), encoding="utf-8")
+
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(ROOT / "src")
+            env["RESEARCH_LOOP_MOCK_ENGINES"] = "1"
+            env["RESEARCH_LOOP_MOCK_FILE"] = str(scenario_path)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "run",
+                    "--campaign",
+                    "campaigns/client-discovery.yaml",
+                    "--research-mode",
+                    "planned",
+                    "--research-engines",
+                    "claude,codex",
+                    "--research-workers",
+                    "3",
+                    "--research-max-topics",
+                    "3",
+                    "--cycles",
+                    "1",
+                ],
+                cwd=root,
+                env=env,
+                check=True,
+            )
+
+            cycle_dir = root / "runs" / "client-discovery" / "cycle-0001"
+            self.assertTrue((cycle_dir / "research-plan.json").exists())
+            self.assertTrue((cycle_dir / "research-merge.json").exists())
+            self.assertTrue((cycle_dir / "researcher-0001" / "topic.json").exists())
+            self.assertTrue((cycle_dir / "researcher-0002" / "engine.json").exists())
+            self.assertTrue((cycle_dir / "researcher" / "normalized.json").exists())
+            merged = json.loads((cycle_dir / "researcher" / "normalized.json").read_text(encoding="utf-8"))
+            self.assertIn("right_client_segment_exists", merged["supports_claims"])
+            self.assertIn("switching_pressure_exists", merged["weakens_claims"])
+
     def test_init_preflight_run_status_and_report(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

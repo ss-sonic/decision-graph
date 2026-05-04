@@ -1,0 +1,118 @@
+{
+  "idea": {
+    "name": "Blinq Sharia Review Strategy",
+    "description": "A pre-deployment, simple-binary, USDC-only, non-levered, curated Blinq event-market design submitted as a candidate information-market product for qualified Sharia review."
+  },
+  "wedge": {
+    "slug": "blinq-sharia-reviewability",
+    "name": "Blinq Sharia reviewability",
+    "description": "Validate whether the current product constraints, controls, evidence pack, and reviewer-facing strategy make Blinq plausibly reviewable by a qualified Sharia scholar or Islamic finance advisor without overclaiming permissibility."
+  },
+  "idea_source": "docs/blinq_sharia_review_pack.md",
+  "notes_sources": [
+    "docs/blinq_sharia_review_pack_supporting_evidence.md",
+    "docs/blinq_sharia_external_source_pack.md",
+    "docs/blinq_sharia_contract_evidence.md",
+    "docs/blinq_sharia_product_scope_sheet.md",
+    "docs/blinq_sharia_controls_matrix.md"
+  ],
+  "evidence_policy": {
+    "mode": "desk_research_plus_your_notes",
+    "founder_notes_can_validate_claims": false,
+    "private_material_can_support_internal_coherence_only": true,
+    "qualified_scholar_review_required_for_final_plausibility": true
+  },
+  "required_artifacts": [
+    "researcher",
+    "skeptic",
+    "rebuttal",
+    "judge"
+  ],
+  "engine_roles": {
+    "researcher": "claude",
+    "skeptic": "codex",
+    "rebuttal": "claude",
+    "judge": "codex"
+  },
+  "core_claims": [
+    {
+      "id": "review_strategy_is_legitimate",
+      "priority": 1,
+      "must_prove": true,
+      "statement": "It is legitimate to submit Blinq as a candidate design for qualified Sharia review, provided the document clearly avoids claiming approval, permissibility, or a religious ruling."
+    },
+    {
+      "id": "product_constraints_reduce_core_risks",
+      "priority": 2,
+      "must_prove": true,
+      "statement": "The reviewed v1 constraints—simple binary markets, USDC only, no yield, no leverage, full collateralization, curated markets, objective resolution, responsible access, and no incentives—materially reduce riba, gharar, and maysir-like risk compared with unconstrained prediction-market or betting products."
+    },
+    {
+      "id": "market_scope_is_reviewable",
+      "priority": 3,
+      "must_prove": true,
+      "statement": "The proposed allowed market categories are narrow, public-source, objective, and public-benefit oriented enough to be reviewable as a candidate product scope rather than an open-ended betting venue."
+    },
+    {
+      "id": "controls_are_concrete_enough",
+      "priority": 4,
+      "must_prove": true,
+      "statement": "The controls matrix, governance thresholds, fee caps, oracle process, emergency pause limits, manual-resolution policy, and responsible-access rules are concrete enough for a reviewer to assess rather than too vague or discretionary."
+    },
+    {
+      "id": "implementation_evidence_is_sufficient_for_pre_review",
+      "priority": 5,
+      "must_prove": true,
+      "statement": "The private implementation-reference evidence is sufficient for pre-review framing while correctly avoiding deployment, audit, production-readiness, or public verification claims."
+    },
+    {
+      "id": "review_path_has_clear_next_step",
+      "priority": 6,
+      "must_prove": true,
+      "statement": "The strategy identifies a clear next step: qualified Sharia scholar and Islamic finance advisor review of the actual market categories, contract terms, collateral handling, oracle process, governance controls, and UI/user-protection mechanics."
+    }
+  ],
+  "kill_criteria": [
+    {
+      "id": "binary_payoff_is_structurally_disqualifying",
+      "priority": 1,
+      "statement": "The binary event-contract payoff remains too close to qimar, maysir, mughalabat, or impermissible options/futures analogies for the review strategy to be plausible, regardless of curation or controls."
+    },
+    {
+      "id": "public_benefit_argument_is_too_weak",
+      "priority": 2,
+      "statement": "The information-market and public-benefit framing is not strong enough to distinguish the product from recreational wagering or speculative zero-sum wealth transfer."
+    },
+    {
+      "id": "usdc_or_fee_model_introduces_riba_risk",
+      "priority": 3,
+      "statement": "USDC collateral, stablecoin reserve exposure, fee handling, treasury flow, or any rewards/incentive design introduces unresolved riba or yield-like concerns."
+    },
+    {
+      "id": "gharar_or_oracle_discretion_too_high",
+      "priority": 4,
+      "statement": "Resolution ambiguity, oracle discretion, admin powers, manual resolution, upgradeability, or emergency controls create too much gharar or operator discretion for reviewability."
+    },
+    {
+      "id": "market_categories_cannot_be_safely_bounded",
+      "priority": 5,
+      "statement": "The allowed market categories cannot be bounded tightly enough to prevent harmful, entertainment-first, political, gossip, violence, sports, casino-like, or compulsive-trading markets from entering the reviewed product."
+    },
+    {
+      "id": "review_pack_is_still_overclaiming",
+      "priority": 6,
+      "statement": "The review pack still implies Sharia approval, permissibility, deployment readiness, audit status, or public verification beyond the available evidence."
+    },
+    {
+      "id": "scholar_review_is_blocked_by_missing_implementation_detail",
+      "priority": 7,
+      "statement": "The reviewer cannot meaningfully assess the strategy without final deployed contracts, final market templates, exact admin roles, final oracle parameters, UI screenshots, and jurisdiction-specific interpretation."
+    }
+  ],
+  "verdict_rules": {
+    "rejection_confidence_threshold": 0.7,
+    "plausible_confidence_threshold": 0.7,
+    "stalled_after_consecutive_no_evidence_cycles": 3,
+    "plausible_requires_pilot_fields": true
+  }
+}

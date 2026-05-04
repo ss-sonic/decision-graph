@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import subprocess
 import sys
@@ -20,6 +21,38 @@ from .utils import ensure_directory, read_json, read_text, write_json
 
 ROLE_SEQUENCE = ["researcher", "skeptic", "rebuttal", "judge"]
 DEFAULT_CAMPAIGN = "campaigns/client-discovery.yaml"
+DEFAULT_RESEARCH_TOPICS = [
+    {
+        "id": "decision_cadence",
+        "title": "Decision cadence and workflow reality",
+        "description": "Research whether the target users actually face recurring, high-stakes decisions matching the current objective.",
+    },
+    {
+        "id": "workarounds",
+        "title": "Existing tools and workarounds",
+        "description": "Research current substitutes, including chat, docs, spreadsheets, advisors, meetings, and incumbent software.",
+    },
+    {
+        "id": "switching_pressure",
+        "title": "Switching pressure and willingness to pay",
+        "description": "Research evidence of dissatisfaction, urgency, pilot interest, spend, or behavior change.",
+    },
+    {
+        "id": "competitors",
+        "title": "Competitor and adjacent product map",
+        "description": "Research adjacent products and whether they already solve the practical workflow.",
+    },
+    {
+        "id": "failure_modes",
+        "title": "Failure modes and objections",
+        "description": "Research evidence for kill criteria, adoption blockers, trust issues, and category risks.",
+    },
+    {
+        "id": "pilot_design",
+        "title": "Pilot design and measurable test",
+        "description": "Research what concrete pilot, interview protocol, or primary evidence would validate or kill the wedge.",
+    },
+]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -44,6 +77,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     run_parser = subparsers.add_parser("run", help="Execute one or more research cycles")
     run_parser.add_argument("--campaign", default=DEFAULT_CAMPAIGN)
+    run_parser.add_argument(
+        "--research-mode",
+        choices=["sequential", "planned"],
+        default="sequential",
+        help="Use the legacy single researcher or planned parallel desk research.",
+    )
+    run_parser.add_argument(
+        "--research-engines",
+        default="",
+        help="Comma-separated engines for planned research. Defaults to the campaign researcher engine.",
+    )
+    run_parser.add_argument("--research-workers", type=int, default=6)
+    run_parser.add_argument("--research-max-topics", type=int, default=6)
     run_parser.add_argument("--cycles", type=int, default=1)
     run_parser.set_defaults(func=cmd_run)
 
@@ -95,13 +141,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     campaign = resolve_campaign(root, args.campaign)
     registry = build_registry()
     state = load_or_initialize_state(root, campaign)
-
-    researcher_engine = registry[campaign.raw["engine_roles"]["researcher"]]
-    if not researcher_engine.preflight().search_available:
-        raise EngineError("Researcher search is required but not available. Adjust Claude search mode and retry.")
+    research_config = build_research_config(args, campaign, registry)
 
     for _ in range(args.cycles):
-        state = run_cycle(root, campaign, state, registry)
+        state = run_cycle(root, campaign, state, registry, research_config)
         save_state(root, campaign, state)
         print(f"Cycle {state['cycle_count']} complete. Verdict: {state['verdict']}")
         if state["verdict"] in {"rejected", "plausible", "stalled"}:
@@ -149,11 +192,61 @@ def resolve_campaign(root: Path, raw_path: str) -> Campaign:
     return load_campaign(path)
 
 
+def build_research_config(args: argparse.Namespace, campaign: Campaign, registry: dict[str, Any]) -> dict[str, Any]:
+    if args.research_workers < 1:
+        raise ValueError("--research-workers must be at least 1")
+    if args.research_max_topics < 1:
+        raise ValueError("--research-max-topics must be at least 1")
+
+    if args.research_mode == "sequential":
+        engine_name = campaign.raw["engine_roles"]["researcher"]
+        adapter = registry[engine_name]
+        if not adapter.preflight().search_available:
+            raise EngineError("Researcher search is required but not available.")
+        return {
+            "mode": "sequential",
+            "engines": [engine_name],
+            "workers": 1,
+            "max_topics": 1,
+        }
+
+    requested = parse_research_engines(args.research_engines or campaign.raw["engine_roles"]["researcher"])
+    usable: list[str] = []
+    for engine_name in requested:
+        if engine_name not in registry:
+            print(f"WARNING: research engine `{engine_name}` is not configured and will be skipped.", flush=True)
+            continue
+        if not registry[engine_name].preflight().search_available:
+            print(f"WARNING: research engine `{engine_name}` has no search capability and will be skipped.", flush=True)
+            continue
+        usable.append(engine_name)
+    if not usable:
+        raise EngineError("No configured research engine has search available.")
+    return {
+        "mode": "planned",
+        "engines": usable,
+        "workers": args.research_workers,
+        "max_topics": args.research_max_topics,
+    }
+
+
+def parse_research_engines(raw: str) -> list[str]:
+    engines: list[str] = []
+    for item in raw.split(","):
+        engine = item.strip()
+        if engine and engine not in engines:
+            engines.append(engine)
+    if not engines:
+        raise ValueError("--research-engines must include at least one engine")
+    return engines
+
+
 def run_cycle(
     root: Path,
     campaign: Campaign,
     state: dict[str, Any],
     registry: dict[str, Any],
+    research_config: dict[str, Any],
 ) -> dict[str, Any]:
     cycle_dir = next_cycle_dir(root, campaign, state)
     cycle_number = int(state["cycle_count"]) + 1
@@ -174,6 +267,22 @@ def run_cycle(
             context_cache.append((f"Founder Note: {note_path.name}", read_text(note_path)))
 
     for role in ROLE_SEQUENCE:
+        if role == "researcher" and research_config["mode"] == "planned":
+            planned_result = run_planned_research(
+                root=root,
+                campaign=campaign,
+                state=state,
+                registry=registry,
+                cycle_dir=cycle_dir,
+                cycle_log_path=cycle_log_path,
+                objective=objective,
+                context_cache=context_cache,
+                research_config=research_config,
+            )
+            latest_artifacts["researcher"] = str(planned_result["normalized_path"])
+            normalized_artifacts["researcher"] = planned_result["artifact"]
+            continue
+
         engine_name = campaign.raw["engine_roles"][role]
         adapter = registry[engine_name]
         role_dir = ensure_directory(cycle_dir / role)
@@ -215,6 +324,312 @@ def run_cycle(
     )
     write_reports(root, campaign, updated_state, judge_artifact)
     return updated_state
+
+
+def run_planned_research(
+    *,
+    root: Path,
+    campaign: Campaign,
+    state: dict[str, Any],
+    registry: dict[str, Any],
+    cycle_dir: Path,
+    cycle_log_path: Path,
+    objective: str,
+    context_cache: list[tuple[str, str]],
+    research_config: dict[str, Any],
+) -> dict[str, Any]:
+    plan = build_campaign_research_plan(
+        campaign=campaign,
+        objective=objective,
+        usable_engines=research_config["engines"],
+        max_topics=research_config["max_topics"],
+    )
+    write_json(cycle_dir / "research-plan.json", plan)
+    log_cycle_line(
+        cycle_log_path,
+        f"Planned {len(plan['assignments'])} researcher(s) across {len(plan['topics'])} topic(s).",
+    )
+
+    worker_results: list[dict[str, Any]] = []
+    failed_workers: list[dict[str, str]] = []
+    with ThreadPoolExecutor(max_workers=max(1, int(research_config["workers"]))) as executor:
+        futures = {
+            executor.submit(
+                invoke_research_worker,
+                root,
+                campaign,
+                state,
+                registry,
+                cycle_dir,
+                cycle_log_path,
+                objective,
+                context_cache,
+                assignment,
+            ): assignment
+            for assignment in plan["assignments"]
+        }
+        for future in as_completed(futures):
+            assignment = futures[future]
+            try:
+                worker_results.append(future.result())
+            except Exception as exc:  # noqa: BLE001 - worker failures are recorded and merged.
+                failed = {
+                    "worker_id": assignment["worker_id"],
+                    "engine": assignment["engine"],
+                    "topic_id": assignment["topic"]["id"],
+                    "error": str(exc),
+                }
+                failed_workers.append(failed)
+                log_cycle_line(
+                    cycle_log_path,
+                    f"WARNING: `{assignment['worker_id']}` with `{assignment['engine']}` failed: {exc}",
+                )
+
+    worker_results.sort(key=lambda item: str(item.get("worker_id") or ""))
+    failed_workers.sort(key=lambda item: str(item.get("worker_id") or ""))
+    merged, metadata = merge_campaign_research_artifacts(worker_results, failed_workers)
+    metadata["plan"] = plan
+    write_json(cycle_dir / "research-merge.json", metadata)
+    researcher_dir = ensure_directory(cycle_dir / "researcher")
+    normalized_path = researcher_dir / "normalized.json"
+    write_json(normalized_path, merged)
+    log_cycle_line(
+        cycle_log_path,
+        f"Merged {len(worker_results)} successful researcher(s); {len(failed_workers)} failed.",
+    )
+    log_artifact_summary(cycle_log_path, "researcher", "merged", merged, 0.0)
+    return {"artifact": merged, "normalized_path": normalized_path}
+
+
+def build_campaign_research_plan(
+    *,
+    campaign: Campaign,
+    objective: str,
+    usable_engines: list[str],
+    max_topics: int,
+) -> dict[str, Any]:
+    if not usable_engines:
+        raise EngineError("Planned research requires at least one usable engine.")
+    topics = [
+        {
+            **topic,
+            "objective": objective,
+            "campaign_slug": campaign.slug,
+        }
+        for topic in DEFAULT_RESEARCH_TOPICS[:max_topics]
+    ]
+    assignments = []
+    for index, topic in enumerate(topics, start=1):
+        engine = usable_engines[(index - 1) % len(usable_engines)]
+        assignments.append(
+            {
+                "worker_id": f"researcher-{index:04d}",
+                "engine": engine,
+                "topic": topic,
+                "assignment_reason": f"Desk-research topic `{topic['id']}` assigned to `{engine}`.",
+            }
+        )
+    return {
+        "mode": "planned",
+        "campaign": campaign.slug,
+        "objective": objective,
+        "usable_engines": usable_engines,
+        "topics": topics,
+        "assignments": assignments,
+    }
+
+
+def invoke_research_worker(
+    root: Path,
+    campaign: Campaign,
+    state: dict[str, Any],
+    registry: dict[str, Any],
+    cycle_dir: Path,
+    cycle_log_path: Path,
+    objective: str,
+    context_cache: list[tuple[str, str]],
+    assignment: dict[str, Any],
+) -> dict[str, Any]:
+    role = "researcher"
+    worker_id = assignment["worker_id"]
+    engine_name = assignment["engine"]
+    adapter = registry[engine_name]
+    role_dir = ensure_directory(cycle_dir / worker_id)
+    write_json(role_dir / "engine.json", {"engine": engine_name})
+    write_json(role_dir / "topic.json", assignment["topic"])
+
+    role_context = build_role_context(role, campaign, state, {}, context_cache)
+    role_context.append(("Assigned Research Topic", json.dumps(assignment["topic"], indent=2, sort_keys=True)))
+    prompt_text = render_prompt(root, role, campaign, objective, role_context)
+    prompt_path = role_dir / "prompt.txt"
+    prompt_path.write_text(prompt_text, encoding="utf-8")
+    log_cycle_line(
+        cycle_log_path,
+        f"Starting `{worker_id}` with `{engine_name}`. Prompt: {prompt_path.relative_to(root)}",
+    )
+    started = time.monotonic()
+    raw_output_path = adapter.invoke(
+        role=worker_id,
+        prompt_text=prompt_text,
+        output_dir=role_dir,
+        search_required=True,
+    )
+    artifact = adapter.normalize(raw_output_path)
+    normalized_path = role_dir / "normalized.json"
+    write_json(normalized_path, artifact)
+    log_artifact_summary(cycle_log_path, worker_id, engine_name, artifact, time.monotonic() - started)
+    return {
+        "worker_id": worker_id,
+        "engine": engine_name,
+        "topic_id": assignment["topic"]["id"],
+        "artifact": artifact,
+        "normalized_path": str(normalized_path),
+    }
+
+
+def merge_campaign_research_artifacts(
+    worker_results: list[dict[str, Any]],
+    failed_workers: list[dict[str, str]],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if not worker_results:
+        raise EngineError("All planned researchers failed; no valid researcher artifact can be merged.")
+
+    findings: list[dict[str, Any]] = []
+    sources_by_key: dict[str, dict[str, Any]] = {}
+    source_provenance: dict[str, list[str]] = {}
+    supports: list[str] = []
+    weakens: list[str] = []
+    kills: list[str] = []
+    contradictions: dict[str, dict[str, str]] = {}
+    open_questions: list[str] = []
+    resolved: list[str] = []
+    summaries: list[str] = []
+    claim_statuses: dict[str, str] = {}
+    kill_counts: dict[str, int] = {}
+    pilot = {
+        "target_user": None,
+        "pain_statement": None,
+        "current_workaround": None,
+        "why_existing_tools_fail": None,
+    }
+
+    for result in worker_results:
+        artifact = result["artifact"]
+        summaries.append(f"{result['worker_id']} ({result['topic_id']}): {artifact.get('summary', '').strip()}")
+        findings.extend(artifact.get("findings", []))
+        supports = append_unique_many(supports, artifact.get("supports_claims", []))
+        weakens = append_unique_many(weakens, artifact.get("weakens_claims", []))
+        kills = append_unique_many(kills, artifact.get("triggered_kill_criteria", []))
+        open_questions = append_unique_many(open_questions, artifact.get("open_questions", []))
+        resolved = append_unique_many(resolved, artifact.get("resolved_contradictions", []))
+        for item in artifact.get("contradictions", []):
+            if not isinstance(item, dict):
+                continue
+            identifier = str(item.get("id") or item.get("detail") or "contradiction")
+            contradictions[identifier] = {"id": identifier, "detail": str(item.get("detail") or "")}
+        for source in artifact.get("sources", []):
+            key = source_dedupe_key(source)
+            sources_by_key.setdefault(key, source)
+            source_provenance.setdefault(key, [])
+            source_provenance[key] = append_unique(source_provenance[key], result["worker_id"])
+        for item in artifact.get("claim_statuses", []):
+            if isinstance(item, dict) and item.get("claim_id"):
+                claim_statuses[str(item["claim_id"])] = str(item.get("status") or "untested")
+        for item in artifact.get("kill_criterion_source_counts", []):
+            if isinstance(item, dict) and item.get("kill_criterion_id"):
+                criterion_id = str(item["kill_criterion_id"])
+                kill_counts[criterion_id] = max(
+                    kill_counts.get(criterion_id, 0),
+                    int(item.get("source_count") or 0),
+                )
+        artifact_pilot = artifact.get("pilot_recommendation") or {}
+        for key in pilot:
+            if not pilot[key] and artifact_pilot.get(key):
+                pilot[key] = artifact_pilot[key]
+
+    if not findings and not sources_by_key:
+        raise EngineError("Planned researchers returned no findings or sources to merge.")
+
+    confidence_values = [
+        float(result["artifact"].get("confidence") or 0)
+        for result in worker_results
+    ]
+    merged = {
+        "objective": "Merged planned desk research across campaign subtopics.",
+        "summary": "Merged planned desk research from multiple researcher workers.\n\n" + "\n".join(summaries),
+        "findings": findings,
+        "sources": list(sources_by_key.values()),
+        "supports_claims": supports,
+        "weakens_claims": weakens,
+        "triggered_kill_criteria": kills,
+        "contradictions": list(contradictions.values()),
+        "open_questions": open_questions,
+        "next_recommended_objective": first_non_empty(
+            [result["artifact"].get("next_recommended_objective") for result in worker_results]
+        ),
+        "confidence": sum(confidence_values) / len(confidence_values),
+        "proposed_mutations": [],
+        "recommended_verdict": "active",
+        "claim_statuses": [
+            {"claim_id": claim_id, "status": status}
+            for claim_id, status in sorted(claim_statuses.items())
+        ],
+        "kill_criterion_source_counts": [
+            {"kill_criterion_id": criterion_id, "source_count": source_count}
+            for criterion_id, source_count in sorted(kill_counts.items())
+        ],
+        "resolved_contradictions": resolved,
+        "pilot_recommendation": pilot,
+    }
+    metadata = {
+        "successful_workers": [
+            {
+                "worker_id": result["worker_id"],
+                "engine": result["engine"],
+                "topic_id": result["topic_id"],
+                "normalized_path": result.get("normalized_path"),
+            }
+            for result in worker_results
+        ],
+        "failed_workers": failed_workers,
+        "source_provenance": [
+            {
+                "dedupe_key": key,
+                "source": sources_by_key[key],
+                "worker_ids": workers,
+            }
+            for key, workers in sorted(source_provenance.items())
+        ],
+    }
+    return merged, metadata
+
+
+def source_dedupe_key(source: dict[str, Any]) -> str:
+    locator = str(source.get("locator") or "").strip().lower().rstrip("/")
+    if locator:
+        return f"locator:{locator}"
+    return f"title:{str(source.get('title') or '').strip().lower()}"
+
+
+def append_unique(values: list[str], value: Any) -> list[str]:
+    text = str(value)
+    if text and text not in values:
+        values.append(text)
+    return values
+
+
+def append_unique_many(values: list[str], candidates: Any) -> list[str]:
+    if isinstance(candidates, list):
+        for item in candidates:
+            append_unique(values, item)
+    return values
+
+
+def first_non_empty(values: list[Any]) -> Any:
+    for value in values:
+        if value:
+            return value
+    return None
 
 
 def build_role_context(

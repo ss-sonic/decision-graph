@@ -16,16 +16,18 @@ class CodexAdapter(EngineAdapter):
 
     def preflight(self) -> PreflightResult:
         base = super().preflight()
-        mode = os.getenv("RESEARCH_LOOP_CODEX_SEARCH_MODE", "off").strip().lower()
+        mode = os.getenv("RESEARCH_LOOP_CODEX_SEARCH_MODE", "on").strip().lower()
+        search_available = mode not in {"off", "false", "0", "no"}
         details = [
             "Codex search is optional in this loop and not required for skeptic/judge roles.",
-            "When enabled, Codex CLI uses its built-in web_search tool; no --search CLI flag is passed.",
+            "Codex CLI uses its built-in web_search tool when the model decides it is needed; no --search CLI flag is passed.",
+            "Set RESEARCH_LOOP_CODEX_SEARCH_MODE=off to disable Codex research workers.",
         ]
         return PreflightResult(
             engine=base.engine,
             available=base.available,
             auth_configured=base.auth_configured or (Path.home() / ".codex").exists(),
-            search_available=mode == "on",
+            search_available=search_available,
             search_mode=mode,
             details=details,
         )

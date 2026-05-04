@@ -18,6 +18,7 @@ from research_loop.doc_cli import (
 )
 from research_loop.doc_spec import load_doc_spec
 from research_loop.doc_state import doc_slug, initialize_doc_state, next_doc_cycle_dir
+from research_loop.engines.codex import CodexAdapter
 from research_loop.engines.base import EngineError, PreflightResult
 
 
@@ -327,6 +328,16 @@ class DocLoopTests(unittest.TestCase):
             },
         )
         self.assertEqual(config["engines"], ["claude"])
+
+    def test_codex_search_preflight_defaults_to_available(self) -> None:
+        previous = os.environ.pop("RESEARCH_LOOP_CODEX_SEARCH_MODE", None)
+        try:
+            result = CodexAdapter().preflight()
+            self.assertTrue(result.search_available)
+            self.assertEqual(result.search_mode, "on")
+        finally:
+            if previous is not None:
+                os.environ["RESEARCH_LOOP_CODEX_SEARCH_MODE"] = previous
 
     def test_doc_spec_allows_negated_fatwa_disclaimer(self) -> None:
         spec = {

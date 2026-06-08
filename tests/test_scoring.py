@@ -27,6 +27,29 @@ class ScoringTests(unittest.TestCase):
         objective = choose_next_objective(self.campaign, state)
         self.assertEqual(objective, "Run the direct benchmark.")
 
+    def test_breadth_ignores_judge_recommendation(self) -> None:
+        state = initialize_state(self.campaign)
+        state["next_objective"] = "Judge wants to keep deep-diving the first claim."
+        objective = choose_next_objective(self.campaign, state, breadth=True)
+        self.assertNotEqual(objective, state["next_objective"])
+        self.assertTrue(objective.startswith("Evaluate claim `"))
+
+    def test_breadth_round_robins_every_claim(self) -> None:
+        state = initialize_state(self.campaign)
+        claim_ids = self.campaign.claim_ids()
+        picked = []
+        for cycle in range(1, len(claim_ids) + 1):
+            objective = choose_next_objective(self.campaign, state, breadth=True)
+            chosen = objective.split("`")[1]
+            picked.append(chosen)
+            # Simulate the claim being evaluated this cycle.
+            state["claim_status"][chosen]["last_cycle"] = cycle
+        # Every claim is covered exactly once before any repeats.
+        self.assertEqual(sorted(picked), sorted(claim_ids))
+        # A contested (already-touched) claim is not re-picked ahead of untested ones.
+        next_objective = choose_next_objective(self.campaign, state, breadth=True)
+        self.assertEqual(next_objective.split("`")[1], picked[0])
+
     def test_plausible_requires_all_must_prove_claims(self) -> None:
         state = initialize_state(self.campaign)
         judge_artifact = {

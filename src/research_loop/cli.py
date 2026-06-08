@@ -91,6 +91,15 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--research-workers", type=int, default=6)
     run_parser.add_argument("--research-max-topics", type=int, default=6)
     run_parser.add_argument("--cycles", type=int, default=1)
+    run_parser.add_argument(
+        "--breadth",
+        action="store_true",
+        help=(
+            "Round-robin one cycle per core claim (least-recently-evaluated first) "
+            "instead of following the judge's recommended next objective. Does not "
+            "stop early on a terminal verdict, so pair with --cycles >= number of claims."
+        ),
+    )
     run_parser.set_defaults(func=cmd_run)
 
     status_parser = subparsers.add_parser("status", help="Show campaign state")
@@ -144,10 +153,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     research_config = build_research_config(args, campaign, registry)
 
     for _ in range(args.cycles):
-        state = run_cycle(root, campaign, state, registry, research_config)
+        state = run_cycle(root, campaign, state, registry, research_config, breadth=args.breadth)
         save_state(root, campaign, state)
         print(f"Cycle {state['cycle_count']} complete. Verdict: {state['verdict']}")
-        if state["verdict"] in {"rejected", "plausible", "stalled"}:
+        # In breadth mode keep going so every claim gets a cycle, even after a
+        # terminal verdict; otherwise stop once the campaign resolves.
+        if not args.breadth and state["verdict"] in {"rejected", "plausible", "stalled"}:
             break
     return 0
 
@@ -247,10 +258,11 @@ def run_cycle(
     state: dict[str, Any],
     registry: dict[str, Any],
     research_config: dict[str, Any],
+    breadth: bool = False,
 ) -> dict[str, Any]:
     cycle_dir = next_cycle_dir(root, campaign, state)
     cycle_number = int(state["cycle_count"]) + 1
-    objective = choose_next_objective(campaign, state)
+    objective = choose_next_objective(campaign, state, breadth=breadth)
     cycle_log_path = cycle_dir / "cycle.log"
     latest_artifacts: dict[str, str] = {}
     normalized_artifacts: dict[str, dict[str, Any]] = {}

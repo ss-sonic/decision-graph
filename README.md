@@ -208,6 +208,13 @@ Do not expect planned mode to replace primary research. If the judge says the bl
 
 --cycles N
   Number of cycles to run. The runner stops early if verdict closes.
+
+--breadth
+  Round-robin one cycle per core claim (least-recently-evaluated first)
+  instead of following the judge's recommended next objective. Guarantees
+  every claim is adjudicated rather than letting one contested claim
+  monopolize the agenda. Does not stop early on a terminal verdict, so
+  pair with --cycles >= number of claims.
 ```
 
 ### How To Read Research Outputs

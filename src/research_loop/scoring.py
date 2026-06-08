@@ -59,7 +59,10 @@ def _kill_source_count_map(raw_value: Any) -> dict[str, int]:
     return {}
 
 
-def choose_next_objective(campaign: Campaign, state: dict[str, Any]) -> str:
+def choose_next_objective(campaign: Campaign, state: dict[str, Any], breadth: bool = False) -> str:
+    if breadth:
+        return _breadth_objective(campaign, state)
+
     next_objective = state.get("next_objective")
     if next_objective:
         return str(next_objective)
@@ -75,6 +78,23 @@ def choose_next_objective(campaign: Campaign, state: dict[str, Any]) -> str:
             return f"Stress-test kill criterion `{criterion_id}`: {kill_statement(campaign, criterion_id)}"
 
     return "Synthesize whether the wedge is pilot-worthy and identify the strongest unresolved objection."
+
+
+def _breadth_objective(campaign: Campaign, state: dict[str, Any]) -> str:
+    """Round-robin over every core claim, ignoring judge steering.
+
+    Picks the least-recently-evaluated claim (never-evaluated first), breaking
+    ties by claim priority. This guarantees one cycle per claim across a run
+    instead of letting a single contested claim monopolize the judge's agenda.
+    """
+
+    def sort_key(claim_id: str) -> tuple[int, int]:
+        claim_state = state["claim_status"].get(claim_id, {})
+        last_cycle = claim_state.get("last_cycle") or 0
+        return (last_cycle, campaign.claim_priority(claim_id))
+
+    chosen = min(campaign.claim_ids(), key=sort_key)
+    return f"Evaluate claim `{chosen}`: {claim_statement(campaign, chosen)}"
 
 
 def apply_cycle_results(
